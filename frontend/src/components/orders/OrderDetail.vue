@@ -80,7 +80,7 @@ function canReturn() {
           <span v-if="order.coupon_code" class="text-[10px] bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">
             Coupon: {{ order.coupon_code }}
           </span>
-          <span v-if="order.loyalty_points > 0" class="text-[10px] bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">
+          <span v-if="order.loyalty_points > 0" class="text-[10px] bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded">
             {{ order.loyalty_points }} pts redeemed
           </span>
           <span v-if="order.consolidated_invoice" class="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">
@@ -231,7 +231,7 @@ function canReturn() {
           <span>Outstanding</span>
           <span>{{ formatCurrency(order.outstanding_amount) }}</span>
         </div>
-        <div v-if="order.loyalty_points > 0" class="flex justify-between text-sm text-indigo-500 dark:text-indigo-400">
+        <div v-if="order.loyalty_points > 0" class="flex justify-between text-sm text-violet-500 dark:text-violet-400">
           <span>Loyalty Redeemed</span>
           <span>{{ order.loyalty_points }} pts ({{ formatCurrency(order.loyalty_amount) }})</span>
         </div>

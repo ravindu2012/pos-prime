@@ -13,6 +13,18 @@ body,
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  background-color: #f9fafb; /* gray-50 */
+}
+
+/* Tell the browser to render native elements (select, option, scrollbars) in dark */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+[data-theme="dark"] body {
+  background-color: #0f0f0f; /* gray-900 */
+}
+
 /* Smooth scrolling for all scroll containers */
 * {
   scroll-behavior: smooth;

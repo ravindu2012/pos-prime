@@ -46,7 +46,7 @@ const { formatCurrency } = useCurrency()
         class="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm"
         :class="
           item.actual_qty > 10
-            ? 'bg-emerald-500/90 text-white'
+            ? 'bg-green-500/90 text-white'
             : item.actual_qty > 0
               ? 'bg-amber-500/90 text-white'
               : 'bg-red-500/90 text-white'

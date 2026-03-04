@@ -124,17 +124,31 @@ function onCameraScan(value: string) {
       />
     </div>
 
+    <!-- Mobile/tablet horizontal categories -->
     <ItemGroupFilter
+      v-if="itemsStore.itemGroups.length > 1"
+      mode="mobile"
+      class="lg:hidden"
       :groups="itemsStore.itemGroups"
       :selected="itemsStore.selectedGroup"
       @select="onGroupSelect"
     />
 
     <div class="flex flex-1 overflow-hidden">
+      <!-- Desktop sidebar categories -->
+      <ItemGroupFilter
+        v-if="itemsStore.itemGroups.length > 1"
+        mode="desktop"
+        class="hidden lg:flex"
+        :groups="itemsStore.itemGroups"
+        :selected="itemsStore.selectedGroup"
+        @select="onGroupSelect"
+      />
+
       <div
         ref="scrollContainer"
         @scroll="onScroll"
-        class="flex-1 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-950"
+        class="flex-1 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900"
       >
         <div
           v-if="itemsStore.loading && itemsStore.items.length === 0"

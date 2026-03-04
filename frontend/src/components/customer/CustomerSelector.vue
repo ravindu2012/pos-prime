@@ -49,7 +49,7 @@ function onNewCustomerCreated() {
 <template>
   <div class="relative">
     <!-- Selected customer display -->
-    <div v-if="customerStore.customer" class="flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl px-3 py-2.5 border border-blue-100 dark:border-blue-800">
+    <div v-if="customerStore.customer" class="flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20 rounded-xl px-3 py-2.5 border border-blue-100 dark:border-blue-800">
       <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center shrink-0">
         <User :size="14" class="text-blue-600 dark:text-blue-400" />
       </div>
@@ -67,7 +67,7 @@ function onNewCustomerCreated() {
           </span>
           <span
             v-if="customerStore.loyaltyPoints > 0"
-            class="inline-flex items-center gap-0.5 px-1.5 py-0 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-md text-[9px] font-bold"
+            class="inline-flex items-center gap-0.5 px-1.5 py-0 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-md text-[9px] font-bold"
           >
             <Tag :size="8" />
             {{ customerStore.loyaltyPoints }} pts

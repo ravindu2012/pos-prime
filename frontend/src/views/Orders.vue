@@ -154,7 +154,7 @@ function handlePrint(invoiceName: string) {
 
         <!-- Right: Detail -->
         <div
-          class="flex-1 bg-gray-50 dark:bg-gray-950"
+          class="flex-1 bg-gray-50 dark:bg-gray-900"
           :class="{ 'hidden lg:block': !mobileShowDetail }"
         >
           <OrderDetail
