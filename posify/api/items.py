@@ -190,6 +190,45 @@ def get_item_tax_templates(company=""):
 
 
 @frappe.whitelist()
+def search_barcode(search_value):
+    """Search for an item by barcode, serial number, or batch number."""
+    # Check Item Barcode
+    barcode_data = frappe.get_all(
+        "Item Barcode",
+        filters={"barcode": search_value},
+        fields=["parent as item_code", "barcode"],
+        limit=1,
+    )
+    if barcode_data:
+        item = frappe.db.get_value("Item", barcode_data[0].item_code,
+            ["item_code", "item_name", "stock_uom"], as_dict=True)
+        if item:
+            return {**item, "barcode": search_value}
+
+    # Check Serial No
+    if frappe.db.exists("Serial No", search_value):
+        sn = frappe.db.get_value("Serial No", search_value,
+            ["name", "item_code", "batch_no"], as_dict=True)
+        item = frappe.db.get_value("Item", sn.item_code,
+            ["item_name", "stock_uom"], as_dict=True)
+        return {"item_code": sn.item_code, "item_name": item.item_name,
+                "serial_no": sn.name, "batch_no": sn.batch_no,
+                "uom": item.stock_uom, "barcode": search_value}
+
+    # Check Batch
+    if frappe.db.exists("Batch", search_value):
+        batch = frappe.db.get_value("Batch", search_value,
+            ["name", "item"], as_dict=True)
+        item = frappe.db.get_value("Item", batch.item,
+            ["item_name", "stock_uom"], as_dict=True)
+        return {"item_code": batch.item, "item_name": item.item_name,
+                "batch_no": batch.name, "uom": item.stock_uom,
+                "barcode": search_value}
+
+    return None
+
+
+@frappe.whitelist()
 def get_item_groups(pos_profile=""):
     """Get item groups, filtered by POS Profile if provided."""
     if pos_profile:

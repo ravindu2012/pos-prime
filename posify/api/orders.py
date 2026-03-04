@@ -121,7 +121,16 @@ def create_return_invoice(source_invoice):
         if source_doc.docstatus != 1:
             frappe.throw(_("Source invoice {0} must be submitted before creating a return").format(source_invoice))
 
-        from erpnext.accounts.doctype.pos_invoice.pos_invoice import make_sales_return
+        try:
+            from erpnext.accounts.doctype.pos_invoice.pos_invoice import make_sales_return
+        except ImportError:
+            try:
+                from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+            except ImportError:
+                make_sales_return = None
+
+        if make_sales_return is None:
+            frappe.throw(_("Return invoice creation is not supported in this ERPNext version."))
 
         return_doc = make_sales_return(source_invoice)
         return {

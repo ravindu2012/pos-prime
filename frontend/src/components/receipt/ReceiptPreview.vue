@@ -42,6 +42,9 @@ function printReceipt() {
     const printWindow = window.open(url, '_blank')
     if (printWindow) {
       printWindow.addEventListener('load', () => {
+        printWindow.addEventListener('afterprint', () => {
+          printWindow.close()
+        })
         printWindow.print()
       })
     }

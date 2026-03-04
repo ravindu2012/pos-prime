@@ -287,7 +287,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
           <div class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
 
             <!-- Payment Method Tabs -->
-            <div class="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar" role="tablist">
+            <div class="flex flex-wrap gap-1.5 pb-0.5" role="tablist">
               <button
                 v-for="pm in settingsStore.paymentMethods"
                 :key="pm.mode_of_payment"
