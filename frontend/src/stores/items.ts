@@ -73,7 +73,7 @@ export const useItemsStore = defineStore('items', () => {
   async function searchByBarcode(barcode: string) {
     try {
       const data = await call(
-        'erpnext.selling.page.point_of_sale.point_of_sale.search_for_serial_or_batch_or_barcode_number',
+        'posify.api.items.search_barcode',
         { search_value: barcode }
       )
       return data

@@ -48,7 +48,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       // Also check for existing open entry
       const openEntries = await call(
-        'erpnext.selling.page.point_of_sale.point_of_sale.check_opening_entry',
+        'posify.api.pos_session.check_opening_entry',
         { user: session.user.data }
       )
       const openVouchers = Array.isArray(openEntries) ? openEntries : []
@@ -66,18 +66,9 @@ export const useSettingsStore = defineStore('settings', () => {
     loading.value = true
     try {
       const data = await call(
-        'erpnext.selling.page.point_of_sale.point_of_sale.get_pos_profile_data',
+        'posify.api.pos_session.get_pos_profile',
         { pos_profile: profileName }
       )
-      // get_pos_profile_data returns the profile doc with expanded child tables
-      posProfile.value = data as POSProfile
-      return data
-    } catch {
-      // Fallback to direct get if get_pos_profile_data is not available
-      const data = await call('frappe.client.get', {
-        doctype: 'POS Profile',
-        name: profileName,
-      })
       posProfile.value = data as POSProfile
       return data
     } finally {

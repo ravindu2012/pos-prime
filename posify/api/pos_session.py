@@ -184,6 +184,48 @@ def _get_shift_data(opening):
 
 
 @frappe.whitelist()
+def check_opening_entry(user=""):
+    """Check if user has an open POS Opening Entry."""
+    user = user or frappe.session.user
+    entries = frappe.get_all(
+        "POS Opening Entry",
+        filters={"user": user, "docstatus": 1, "status": "Open"},
+        fields=["name", "pos_profile", "company"],
+    )
+    return entries
+
+
+@frappe.whitelist()
+def create_opening_entry(pos_profile, company, balance_details):
+    """Create a new POS Opening Entry."""
+    if isinstance(balance_details, str):
+        balance_details = json.loads(balance_details)
+
+    doc = frappe.get_doc({
+        "doctype": "POS Opening Entry",
+        "user": frappe.session.user,
+        "pos_profile": pos_profile,
+        "company": company,
+        "period_start_date": nowdate() + " " + nowtime(),
+    })
+    for detail in balance_details:
+        doc.append("balance_details", {
+            "mode_of_payment": detail.get("mode_of_payment"),
+            "opening_amount": detail.get("opening_amount", 0),
+        })
+    doc.insert(ignore_permissions=True)
+    doc.submit()
+    return doc.as_dict()
+
+
+@frappe.whitelist()
+def get_pos_profile(pos_profile):
+    """Get full POS Profile document."""
+    doc = frappe.get_doc("POS Profile", pos_profile)
+    return doc.as_dict()
+
+
+@frappe.whitelist()
 def close_shift(opening_entry, closing_amounts=None):
     """Create a POS Closing Entry with proper per-mode reconciliation."""
     if isinstance(closing_amounts, str):

@@ -17,7 +17,7 @@ export const usePosSessionStore = defineStore('posSession', () => {
     try {
       // check_opening_entry returns a LIST of open POS Opening Entries
       const data = await call(
-        'erpnext.selling.page.point_of_sale.point_of_sale.check_opening_entry',
+        'posify.api.pos_session.check_opening_entry',
         { user: session.user.data }
       )
       const openVouchers = Array.isArray(data) ? data : []
@@ -41,7 +41,7 @@ export const usePosSessionStore = defineStore('posSession', () => {
     loading.value = true
     try {
       const data = await call(
-        'erpnext.selling.page.point_of_sale.point_of_sale.create_opening_voucher',
+        'posify.api.pos_session.create_opening_entry',
         {
           pos_profile: args.pos_profile,
           company: args.company,
