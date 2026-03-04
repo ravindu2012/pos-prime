@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Vite build output (generated files)
+posify/public/frontend/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
