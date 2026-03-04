@@ -34,151 +34,32 @@ def get_opening_data():
 def get_shift_summary(opening_entry):
     """Get per-payment-method breakdown for closing shift.
 
-    Returns expected amounts calculated from actual payment entries
-    in POS Invoices during this shift.
+    Uses ERPNext's built-in make_closing_entry_from_opening to get
+    accurate invoice data with proper timestamp range filtering.
     """
+    from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import (
+        make_closing_entry_from_opening,
+    )
+
     opening = frappe.get_doc("POS Opening Entry", opening_entry)
+    closing_entry = make_closing_entry_from_opening(opening)
 
-    # Get all POS Invoices for this shift
-    invoices = frappe.get_list(
-        "POS Invoice",
-        filters={
-            "pos_profile": opening.pos_profile,
-            "owner": frappe.session.user,
-            "docstatus": 1,
-            "posting_date": [">=", str(opening.period_start_date).split(" ")[0]],
-        },
-        fields=["name", "grand_total", "net_total", "total_qty"],
-    )
-
-    grand_total = sum(inv.grand_total for inv in invoices)
-    net_total = sum(inv.net_total for inv in invoices)
-    total_qty = sum(inv.total_qty for inv in invoices)
-
-    # Get actual payment totals per mode from invoice payments
-    invoice_names = [inv.name for inv in invoices]
-    payment_totals = {}
-
-    if invoice_names:
-        payments = frappe.db.sql(
-            """
-            SELECT mode_of_payment, SUM(amount) as total_amount
-            FROM `tabSales Invoice Payment`
-            WHERE parent IN %(invoices)s
-            GROUP BY mode_of_payment
-            """,
-            {"invoices": invoice_names},
-            as_dict=True,
-        )
-        for p in payments:
-            payment_totals[p.mode_of_payment] = p.total_amount or 0
-
-    # Build per-payment-method summary
     payment_summary = []
-    for bd in opening.balance_details:
-        mode = bd.mode_of_payment
-        opening_amount = bd.opening_amount or 0
-        sales_amount = payment_totals.pop(mode, 0)
-        expected = opening_amount + sales_amount
-
+    for pr in closing_entry.payment_reconciliation:
         payment_summary.append(
             {
-                "mode_of_payment": mode,
-                "opening_amount": opening_amount,
-                "sales_amount": sales_amount,
-                "expected_amount": expected,
-            }
-        )
-
-    # Add any payment modes that were used but not in opening balance
-    for mode, amount in payment_totals.items():
-        payment_summary.append(
-            {
-                "mode_of_payment": mode,
-                "opening_amount": 0,
-                "sales_amount": amount,
-                "expected_amount": amount,
+                "mode_of_payment": pr.mode_of_payment,
+                "opening_amount": pr.opening_amount or 0,
+                "sales_amount": (pr.expected_amount or 0) - (pr.opening_amount or 0),
+                "expected_amount": pr.expected_amount or 0,
             }
         )
 
     return {
-        "grand_total": grand_total,
-        "net_total": net_total,
-        "total_quantity": total_qty,
-        "num_invoices": len(invoices),
-        "payment_summary": payment_summary,
-    }
-
-
-def _get_shift_data(opening):
-    """Fetch fresh shift summary data for closing.
-
-    This is an internal helper that computes summary data directly,
-    avoiding the race condition of calling get_shift_summary separately.
-    """
-    invoices = frappe.get_list(
-        "POS Invoice",
-        filters={
-            "pos_profile": opening.pos_profile,
-            "owner": frappe.session.user,
-            "docstatus": 1,
-            "posting_date": [">=", str(opening.period_start_date).split(" ")[0]],
-        },
-        fields=["name", "grand_total", "net_total", "total_qty"],
-    )
-
-    grand_total = sum(inv.grand_total for inv in invoices)
-    net_total = sum(inv.net_total for inv in invoices)
-    total_qty = sum(inv.total_qty for inv in invoices)
-
-    invoice_names = [inv.name for inv in invoices]
-    payment_totals = {}
-
-    if invoice_names:
-        payments = frappe.db.sql(
-            """
-            SELECT mode_of_payment, SUM(amount) as total_amount
-            FROM `tabSales Invoice Payment`
-            WHERE parent IN %(invoices)s
-            GROUP BY mode_of_payment
-            """,
-            {"invoices": invoice_names},
-            as_dict=True,
-        )
-        for p in payments:
-            payment_totals[p.mode_of_payment] = p.total_amount or 0
-
-    payment_summary = []
-    for bd in opening.balance_details:
-        mode = bd.mode_of_payment
-        opening_amount = bd.opening_amount or 0
-        sales_amount = payment_totals.pop(mode, 0)
-        expected = opening_amount + sales_amount
-
-        payment_summary.append(
-            {
-                "mode_of_payment": mode,
-                "opening_amount": opening_amount,
-                "sales_amount": sales_amount,
-                "expected_amount": expected,
-            }
-        )
-
-    for mode, amount in payment_totals.items():
-        payment_summary.append(
-            {
-                "mode_of_payment": mode,
-                "opening_amount": 0,
-                "sales_amount": amount,
-                "expected_amount": amount,
-            }
-        )
-
-    return {
-        "invoices": invoices,
-        "grand_total": grand_total,
-        "net_total": net_total,
-        "total_quantity": total_qty,
+        "grand_total": closing_entry.grand_total,
+        "net_total": closing_entry.net_total,
+        "total_quantity": closing_entry.total_quantity,
+        "num_invoices": len(closing_entry.pos_transactions),
         "payment_summary": payment_summary,
     }
 
@@ -227,7 +108,15 @@ def get_pos_profile(pos_profile):
 
 @frappe.whitelist()
 def close_shift(opening_entry, closing_amounts=None):
-    """Create a POS Closing Entry with proper per-mode reconciliation."""
+    """Create a POS Closing Entry using ERPNext's built-in logic.
+
+    Uses make_closing_entry_from_opening which correctly fetches invoices
+    by timestamp range, user, pos_profile, and excludes already-consolidated ones.
+    """
+    from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import (
+        make_closing_entry_from_opening,
+    )
+
     if isinstance(closing_amounts, str):
         closing_amounts = json.loads(closing_amounts)
 
@@ -240,57 +129,22 @@ def close_shift(opening_entry, closing_amounts=None):
     if opening.status != "Open" or opening.docstatus != 1:
         frappe.throw(_("Opening entry {0} is not open or not submitted").format(opening_entry))
 
-    # Fetch fresh summary data INSIDE the function to avoid race condition
-    shift_data = _get_shift_data(opening)
+    # Use ERPNext's built-in function to build the closing entry
+    closing = make_closing_entry_from_opening(opening)
 
-    closing = frappe.get_doc(
-        {
-            "doctype": "POS Closing Entry",
-            "user": frappe.session.user,
-            "pos_profile": opening.pos_profile,
-            "company": opening.company,
-            "pos_opening_entry": opening_entry,
-            "period_start_date": opening.period_start_date,
-            "period_end_date": nowdate() + " " + nowtime(),
-            "posting_date": nowdate(),
-            "posting_time": nowtime(),
-            "grand_total": shift_data["grand_total"],
-            "net_total": shift_data["net_total"],
-            "total_quantity": shift_data["total_quantity"],
-        }
-    )
-
-    # Add POS transactions
-    for inv in shift_data["invoices"]:
-        closing.append(
-            "pos_transactions",
-            {
-                "pos_invoice": inv.name,
-                "grand_total": inv.grand_total,
-            },
-        )
-
-    # Build closing amounts lookup
+    # Apply user-provided closing amounts
     closing_lookup = {}
     if closing_amounts:
         for ca in closing_amounts:
             closing_lookup[ca.get("mode_of_payment")] = ca.get("closing_amount", 0)
 
-    # Add payment reconciliation using actual per-mode data
-    for ps in shift_data["payment_summary"]:
-        mode = ps["mode_of_payment"]
-        closing_amount = closing_lookup.get(mode, 0)
+    for pr in closing.payment_reconciliation:
+        closing_amount = closing_lookup.get(pr.mode_of_payment, 0)
+        pr.closing_amount = closing_amount
+        pr.difference = closing_amount - (pr.expected_amount or 0)
 
-        closing.append(
-            "payment_reconciliation",
-            {
-                "mode_of_payment": mode,
-                "opening_amount": ps["opening_amount"],
-                "expected_amount": ps["expected_amount"],
-                "closing_amount": closing_amount,
-                "difference": closing_amount - ps["expected_amount"],
-            },
-        )
+    closing.posting_date = nowdate()
+    closing.posting_time = nowtime()
 
     closing.insert(ignore_permissions=True)
     closing.submit()
