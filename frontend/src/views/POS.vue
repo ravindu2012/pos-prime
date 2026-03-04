@@ -7,6 +7,7 @@ import { useCartStore } from '@/stores/cart'
 import { useCustomerStore } from '@/stores/customer'
 import { usePaymentStore } from '@/stores/payment'
 import { useDraftsStore } from '@/stores/drafts'
+import { useItemsStore } from '@/stores/items'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import AppShell from '@/components/layout/AppShell.vue'
 import ItemGrid from '@/components/items/ItemGrid.vue'
@@ -14,6 +15,7 @@ import Cart from '@/components/cart/Cart.vue'
 import PaymentDialog from '@/components/payment/PaymentDialog.vue'
 import ReceiptPreview from '@/components/receipt/ReceiptPreview.vue'
 import HeldOrdersDrawer from '@/components/orders/HeldOrdersDrawer.vue'
+import ReturnSearchDialog from '@/components/orders/ReturnSearchDialog.vue'
 import { LayoutGrid, ShoppingCart } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -23,10 +25,12 @@ const cartStore = useCartStore()
 const customerStore = useCustomerStore()
 const paymentStore = usePaymentStore()
 const draftsStore = useDraftsStore()
+const itemsStore = useItemsStore()
 
 const mobileTab = ref<'items' | 'cart'>('items')
 const showReceipt = ref(false)
 const showHeldOrders = ref(false)
+const showReturnDialog = ref(false)
 const loading = ref(true)
 
 // Keyboard shortcuts
@@ -85,6 +89,8 @@ async function startNewOrder() {
   if (settingsStore.posProfile?.customer) {
     await customerStore.setCustomer(settingsStore.posProfile.customer)
   }
+  // Refresh items to get updated stock quantities
+  itemsStore.fetchItems(0)
 }
 
 async function holdOrder() {
@@ -186,6 +192,11 @@ async function resumeDraft(invoiceName: string) {
     // Handle error
   }
 }
+
+function onReturnCompleted() {
+  showReturnDialog.value = false
+  startNewOrder()
+}
 </script>
 
 <template>
@@ -193,7 +204,7 @@ async function resumeDraft(invoiceName: string) {
     <div class="text-gray-400 dark:text-gray-500 text-sm">Loading POS...</div>
   </div>
 
-  <AppShell v-else @toggle-held-orders="showHeldOrders = !showHeldOrders">
+  <AppShell v-else @toggle-held-orders="showHeldOrders = !showHeldOrders" @toggle-return="showReturnDialog = true">
     <div class="flex h-full">
       <!-- Items panel -->
       <div
@@ -245,7 +256,7 @@ async function resumeDraft(invoiceName: string) {
     <ReceiptPreview
       v-if="showReceipt"
       @new-order="startNewOrder"
-      @close="showReceipt = false"
+      @close="startNewOrder"
     />
 
     <!-- Held orders drawer -->
@@ -253,6 +264,13 @@ async function resumeDraft(invoiceName: string) {
       v-if="showHeldOrders"
       @close="showHeldOrders = false"
       @resume="resumeDraft"
+    />
+
+    <!-- Manual return dialog -->
+    <ReturnSearchDialog
+      v-if="showReturnDialog"
+      @close="showReturnDialog = false"
+      @completed="onReturnCompleted"
     />
   </AppShell>
 </template>

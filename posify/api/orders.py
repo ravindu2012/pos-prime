@@ -2,7 +2,12 @@ import frappe
 from frappe import _
 import json
 
-from posify.api._utils import format_invoice_response, validate_pos_access, safe_float
+from posify.api._utils import (
+    build_item_dict,
+    format_invoice_response,
+    validate_pos_access,
+    safe_float,
+)
 
 
 @frappe.whitelist()
@@ -211,3 +216,79 @@ def submit_return_invoice(invoice_name, items, payments):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Posify: submit_return_invoice failed")
         frappe.throw(_("Failed to submit return invoice: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def create_manual_return(customer, pos_profile, items, mode_of_payment):
+    """Create and submit a return POS Invoice from manually entered items.
+
+    Items should have positive qty/rate — they will be negated automatically.
+    """
+    validate_pos_access(pos_profile)
+
+    if isinstance(items, str):
+        items = json.loads(items)
+
+    if not items:
+        frappe.throw(_("At least one item is required for a return"))
+
+    try:
+        profile = frappe.get_doc("POS Profile", pos_profile)
+
+        invoice = frappe.get_doc({
+            "doctype": "POS Invoice",
+            "customer": customer,
+            "company": profile.company,
+            "pos_profile": pos_profile,
+            "is_pos": 1,
+            "is_return": 1,
+            "selling_price_list": profile.selling_price_list or "Standard Selling",
+            "currency": profile.currency
+            or frappe.defaults.get_defaults().get("currency", "USD"),
+            "set_warehouse": profile.warehouse,
+            "account_for_change_amount": profile.account_for_change_amount
+            or profile.write_off_account,
+            "write_off_account": profile.write_off_account,
+            "write_off_cost_center": profile.write_off_cost_center,
+            "apply_discount_on": profile.apply_discount_on or "Grand Total",
+            "ignore_pricing_rule": 1 if profile.ignore_pricing_rule else 0,
+        })
+
+        if profile.company_address:
+            invoice.company_address = profile.company_address
+
+        if profile.taxes_and_charges:
+            invoice.taxes_and_charges = profile.taxes_and_charges
+        if profile.tax_category:
+            invoice.tax_category = profile.tax_category
+
+        # Add items with negative qty
+        for item_data in items:
+            item_dict = build_item_dict(item_data, profile)
+            item_dict["qty"] = -abs(safe_float(item_dict.get("qty", 1)))
+            invoice.append("items", item_dict)
+
+        # Compute return total (will be negative)
+        return_total = sum(
+            safe_float(i.get("qty", 1)) * safe_float(i.get("rate", 0))
+            for i in items
+        )
+
+        invoice.append("payments", {
+            "mode_of_payment": mode_of_payment,
+            "amount": -abs(return_total),
+        })
+        invoice.paid_amount = -abs(return_total)
+        invoice.base_paid_amount = -abs(return_total)
+
+        invoice.flags.ignore_permissions = True
+        invoice.set_missing_values()
+        invoice.insert()
+        invoice.submit()
+
+        return format_invoice_response(invoice)
+    except frappe.PermissionError:
+        raise
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Posify: create_manual_return failed")
+        frappe.throw(_("Failed to process return: {0}").format(str(e)))

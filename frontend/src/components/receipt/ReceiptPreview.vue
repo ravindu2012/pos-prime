@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { usePaymentStore } from '@/stores/payment'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
-import { Printer, Plus, X, Check } from 'lucide-vue-next'
+import { Printer, Plus, X, Check, Share2, Loader2 } from 'lucide-vue-next'
 
 const emit = defineEmits<{
   newOrder: []
@@ -54,6 +54,60 @@ function printReceipt() {
   }
 }
 
+const sharing = ref(false)
+
+async function generateReceiptPdf(): Promise<Blob> {
+  const { default: html2canvas } = await import('html2canvas')
+  const { jsPDF } = await import('jspdf')
+
+  const el = document.getElementById('receipt-content')
+  if (!el) throw new Error('Receipt content not found')
+
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+  })
+
+  const imgWidth = 80 // mm (receipt width)
+  const imgHeight = (canvas.height * imgWidth) / canvas.width
+  const pdf = new jsPDF({ unit: 'mm', format: [imgWidth, imgHeight + 10] })
+  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 5, imgWidth, imgHeight)
+  return pdf.output('blob')
+}
+
+async function shareReceipt() {
+  if (!invoice.value) return
+  const inv = invoice.value
+  sharing.value = true
+  try {
+    const blob = await generateReceiptPdf()
+    const fileName = `${inv.name}.pdf`
+    const file = new File([blob], fileName, { type: 'application/pdf' })
+
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `Receipt ${inv.name}`,
+        text: `Receipt from ${inv.company || sessionStore.company || 'Our Store'} - ${formatCurrency(inv.grand_total)}`,
+      })
+    } else {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+  } catch (e: any) {
+    if (e.name !== 'AbortError') {
+      console.error('Share failed:', e)
+    }
+  } finally {
+    sharing.value = false
+  }
+}
+
 function newOrder() {
   emit('newOrder')
 }
@@ -62,7 +116,7 @@ function newOrder() {
 <template>
   <Teleport to="body">
     <div v-if="invoice" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-label="Receipt">
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm no-print" @click="emit('close')" />
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm no-print" />
       <div class="relative bg-white dark:bg-gray-900 w-full sm:rounded-2xl sm:shadow-2xl dark:sm:shadow-black/30 sm:max-w-sm max-h-[100dvh] sm:max-h-[90vh] flex flex-col overflow-hidden rounded-t-2xl animate-slide-up sm:animate-scale-in">
 
         <!-- Success header (no-print) -->
@@ -256,21 +310,33 @@ function newOrder() {
         </div>
 
         <!-- Actions (no-print) -->
-        <div class="no-print px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex gap-2 bg-white dark:bg-gray-900">
+        <div class="no-print px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2 bg-white dark:bg-gray-900">
+          <!-- Share receipt PDF - mobile only -->
           <button
-            @click="printReceipt"
-            class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2"
+            @click="shareReceipt"
+            :disabled="sharing"
+            class="sm:hidden w-full py-2.5 bg-[#25D366] text-white rounded-xl text-sm font-semibold hover:bg-[#1fb855] active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            <Printer :size="16" />
-            Print
+            <Loader2 v-if="sharing" :size="16" class="animate-spin" />
+            <Share2 v-else :size="16" />
+            {{ sharing ? 'Preparing...' : 'Share Receipt via WhatsApp' }}
           </button>
-          <button
-            @click="newOrder"
-            class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center gap-2"
-          >
-            <Plus :size="16" />
-            New Order
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="printReceipt"
+              class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2"
+            >
+              <Printer :size="16" />
+              Print
+            </button>
+            <button
+              @click="newOrder"
+              class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center gap-2"
+            >
+              <Plus :size="16" />
+              New Order
+            </button>
+          </div>
         </div>
       </div>
     </div>

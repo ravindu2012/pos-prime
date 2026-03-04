@@ -105,7 +105,6 @@ def create_pos_invoice(
             "currency": profile.currency
             or frappe.defaults.get_defaults().get("currency", "USD"),
             "set_warehouse": profile.warehouse,
-            "update_stock": 1,
             "account_for_change_amount": profile.account_for_change_amount
             or profile.write_off_account,
             "write_off_account": profile.write_off_account,
