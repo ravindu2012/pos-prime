@@ -63,8 +63,24 @@ def get_items(
         values["search"] = f"%{search_term}%"
 
     if should_hide and warehouse:
-        # JOIN with Bin to only return items with stock > 0
-        join_clause = "INNER JOIN `tabBin` b ON b.item_code = i.item_code AND b.warehouse = %(warehouse)s AND b.actual_qty > 0"
+        # JOIN with Bin and subtract POS-reserved qty (submitted but
+        # unconsolidated POS Invoices) so items sold out in POS are hidden
+        # even before consolidation deducts from the stock ledger.
+        join_clause = (
+            "LEFT JOIN `tabBin` b ON b.item_code = i.item_code AND b.warehouse = %(warehouse)s "
+            "LEFT JOIN ("
+            "  SELECT pi_item.item_code, SUM(pi_item.stock_qty) as reserved_qty"
+            "  FROM `tabPOS Invoice Item` pi_item"
+            "  INNER JOIN `tabPOS Invoice` pi ON pi.name = pi_item.parent"
+            "  WHERE pi_item.docstatus = 1"
+            "    AND pi_item.warehouse = %(warehouse)s"
+            "    AND IFNULL(pi.consolidated_invoice, '') = ''"
+            "  GROUP BY pi_item.item_code"
+            ") pos_res ON pos_res.item_code = i.item_code"
+        )
+        conditions.append(
+            "(i.is_stock_item = 0 OR (IFNULL(b.actual_qty, 0) - IFNULL(pos_res.reserved_qty, 0)) > 0)"
+        )
         values["warehouse"] = warehouse
     else:
         join_clause = ""
@@ -76,7 +92,7 @@ def get_items(
         SELECT
             i.item_code, i.item_name, i.description, i.item_group,
             i.stock_uom, i.image, i.has_batch_no, i.has_serial_no,
-            i.brand, i.weight_per_unit, i.weight_uom
+            i.is_stock_item, i.brand, i.weight_per_unit, i.weight_uom
         FROM `tabItem` i
         {join_clause}
         WHERE {where}
@@ -146,12 +162,35 @@ def get_items(
         if t.parent not in tax_templates:
             tax_templates[t.parent] = t.item_tax_template
 
+    # ── Batch fetch POS-reserved qty ──────────────────────────────────
+    # Submitted but unconsolidated POS Invoices reserve stock that hasn't
+    # been deducted from Bin yet (stock ledger updates at consolidation).
+    # Subtract reserved qty so the POS shows real available stock.
+    reserved = {}
+    if warehouse:
+        reserved_data = frappe.db.sql(
+            """
+            SELECT pi_item.item_code, SUM(pi_item.stock_qty) as qty
+            FROM `tabPOS Invoice Item` pi_item
+            INNER JOIN `tabPOS Invoice` pi ON pi.name = pi_item.parent
+            WHERE pi_item.docstatus = 1
+              AND pi_item.item_code IN %(item_codes)s
+              AND pi_item.warehouse = %(warehouse)s
+              AND IFNULL(pi.consolidated_invoice, '') = ''
+            GROUP BY pi_item.item_code
+            """,
+            {"item_codes": item_codes, "warehouse": warehouse},
+            as_dict=True,
+        )
+        reserved = {r.item_code: r.qty or 0 for r in reserved_data}
+
     # ── Assemble response ────────────────────────────────────────────
     currency = frappe.defaults.get_defaults().get("currency", "USD")
     for item in items:
         item["rate"] = prices.get(item.item_code, 0)
         item["currency"] = currency
-        item["actual_qty"] = stock.get(item.item_code, 0)
+        actual = stock.get(item.item_code, 0)
+        item["actual_qty"] = max(actual - reserved.get(item.item_code, 0), 0)
         item["barcode"] = barcodes.get(item.item_code)
         item["item_tax_template"] = tax_templates.get(item.item_code)
 

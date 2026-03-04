@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "frappe-ui": "^0.1.60",
+    "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.0",
     "lucide-vue-next": "^0.344.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",

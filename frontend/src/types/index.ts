@@ -59,6 +59,7 @@ export interface Item {
   image: string | null
   rate: number
   actual_qty: number
+  is_stock_item: boolean
   currency: string
   has_batch_no: boolean
   has_serial_no: boolean

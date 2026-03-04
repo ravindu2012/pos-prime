@@ -221,7 +221,6 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
         <!-- Backdrop -->
         <div
           class="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          @click="paymentStore.closePaymentDialog()"
         />
 
         <!-- Dialog -->

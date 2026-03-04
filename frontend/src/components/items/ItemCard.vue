@@ -40,9 +40,9 @@ const { formatCurrency } = useCurrency()
         </div>
       </div>
 
-      <!-- Stock badge -->
+      <!-- Stock badge (only for stock items, not services) -->
       <span
-        v-if="item.actual_qty !== undefined"
+        v-if="item.is_stock_item && item.actual_qty !== undefined"
         class="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm"
         :class="
           item.actual_qty > 10
