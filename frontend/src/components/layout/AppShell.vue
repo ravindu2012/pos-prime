@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { call } from 'frappe-ui'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePosSessionStore } from '@/stores/posSession'
 import { session as userSession } from '@/stores/session'
@@ -12,6 +13,8 @@ import {
   X,
   PauseCircle,
   User,
+  Maximize,
+  Minimize,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -19,6 +22,11 @@ const route = useRoute()
 const draftsStore = useDraftsStore()
 const sessionStore = usePosSessionStore()
 const sidebarOpen = ref(false)
+
+const companyLogo = ref<string | null>(null)
+const companyAbbr = ref('P')
+const userFullName = ref('')
+const userImage = ref<string | null>(null)
 
 const navItems = [
   { name: 'POS', path: '/posify', icon: Grid3x3 },
@@ -28,9 +36,48 @@ const navItems = [
 const currentPath = computed(() => route.path)
 const draftCount = computed(() => draftsStore.drafts.length)
 
+const userInitials = computed(() => {
+  if (!userFullName.value) return '?'
+  const parts = userFullName.value.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return parts[0][0].toUpperCase()
+})
+
 onMounted(async () => {
   if (sessionStore.posProfile) {
     await draftsStore.fetchDrafts(sessionStore.posProfile)
+  }
+
+  // Fetch company logo
+  if (sessionStore.company) {
+    try {
+      const doc = await call('frappe.client.get_value', {
+        doctype: 'Company',
+        filters: { name: sessionStore.company },
+        fieldname: ['company_logo', 'abbr'],
+      })
+      if (doc) {
+        companyLogo.value = doc.company_logo || null
+        companyAbbr.value = doc.abbr || sessionStore.company[0]
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Fetch user info
+  if (userSession.user?.data) {
+    try {
+      const doc = await call('frappe.client.get_value', {
+        doctype: 'User',
+        filters: { name: userSession.user.data },
+        fieldname: ['full_name', 'user_image'],
+      })
+      if (doc) {
+        userFullName.value = doc.full_name || userSession.user.data
+        userImage.value = doc.user_image || null
+      }
+    } catch {
+      userFullName.value = userSession.user.data
+    }
   }
 })
 
@@ -44,6 +91,22 @@ function closeShift() {
   sidebarOpen.value = false
 }
 
+const isFullscreen = ref(false)
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+  } else {
+    document.exitFullscreen()
+  }
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('fullscreenchange', () => {
+    isFullscreen.value = !!document.fullscreenElement
+  })
+}
+
 const emit = defineEmits<{
   toggleHeldOrders: []
 }>()
@@ -55,9 +118,17 @@ const emit = defineEmits<{
     <aside
       class="hidden lg:flex lg:w-[60px] flex-col items-center bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 py-3 gap-1"
     >
-      <!-- Logo -->
-      <div class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mb-3 shadow-sm shadow-blue-600/20">
-        <span class="text-white font-bold text-sm">P</span>
+      <!-- Company Logo -->
+      <div class="mb-3">
+        <img
+          v-if="companyLogo"
+          :src="companyLogo"
+          :alt="sessionStore.company"
+          class="w-9 h-9 rounded-xl object-contain"
+        />
+        <div v-else class="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-sm shadow-blue-600/20">
+          <span class="text-white font-bold text-sm">{{ companyAbbr }}</span>
+        </div>
       </div>
 
       <!-- Nav items -->
@@ -95,9 +166,30 @@ const emit = defineEmits<{
 
       <div class="flex-1" />
 
-      <!-- User avatar -->
-      <div class="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-1" :title="userSession.user?.data || ''">
-        <User :size="14" class="text-gray-400 dark:text-gray-500" />
+      <!-- Fullscreen toggle -->
+      <button
+        @click="toggleFullscreen"
+        :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+        class="flex flex-col items-center justify-center w-11 h-11 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-200 mb-1"
+      >
+        <Minimize v-if="isFullscreen" :size="18" />
+        <Maximize v-else :size="18" />
+      </button>
+
+      <!-- User profile -->
+      <div class="flex flex-col items-center gap-1 mb-1" :title="userFullName || userSession.user?.data || ''">
+        <img
+          v-if="userImage"
+          :src="userImage"
+          :alt="userFullName"
+          class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+        />
+        <div v-else class="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+          <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400">{{ userInitials }}</span>
+        </div>
+        <span class="text-[8px] text-gray-400 dark:text-gray-500 font-medium text-center leading-tight max-w-[56px] truncate">
+          {{ userFullName.split(' ')[0] || userSession.user?.data }}
+        </span>
       </div>
 
       <!-- Close shift -->
@@ -116,10 +208,16 @@ const emit = defineEmits<{
       <!-- Mobile header -->
       <header class="lg:hidden flex items-center justify-between bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 h-12">
         <div class="flex items-center gap-2">
-          <div class="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-            <span class="text-white font-bold text-[10px]">P</span>
+          <img
+            v-if="companyLogo"
+            :src="companyLogo"
+            :alt="sessionStore.company"
+            class="w-6 h-6 rounded-lg object-contain"
+          />
+          <div v-else class="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-[10px]">{{ companyAbbr }}</span>
           </div>
-          <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">Posify</span>
+          <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">{{ sessionStore.company || 'Posify' }}</span>
         </div>
         <div class="flex items-center gap-1">
           <button
