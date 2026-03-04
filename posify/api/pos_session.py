@@ -44,22 +44,37 @@ def get_shift_summary(opening_entry):
     opening = frappe.get_doc("POS Opening Entry", opening_entry)
     closing_entry = make_closing_entry_from_opening(opening)
 
+    # Build opening amounts lookup from the opening entry itself
+    # (v16 doesn't prepend opening amounts into payment_reconciliation)
+    opening_amounts = {
+        d.mode_of_payment: d.opening_amount or 0
+        for d in opening.balance_details
+    }
+
     payment_summary = []
     for pr in closing_entry.payment_reconciliation:
+        opening_amt = getattr(pr, "opening_amount", None) or opening_amounts.get(pr.mode_of_payment, 0)
         payment_summary.append(
             {
                 "mode_of_payment": pr.mode_of_payment,
-                "opening_amount": pr.opening_amount or 0,
-                "sales_amount": (pr.expected_amount or 0) - (pr.opening_amount or 0),
+                "opening_amount": opening_amt,
+                "sales_amount": (pr.expected_amount or 0) - opening_amt,
                 "expected_amount": pr.expected_amount or 0,
             }
         )
+
+    # v14/v15 use pos_transactions, v16 uses pos_invoices
+    transactions = (
+        closing_entry.get("pos_transactions")
+        or closing_entry.get("pos_invoices")
+        or []
+    )
 
     return {
         "grand_total": closing_entry.grand_total,
         "net_total": closing_entry.net_total,
         "total_quantity": closing_entry.total_quantity,
-        "num_invoices": len(closing_entry.pos_transactions),
+        "num_invoices": len(transactions),
         "payment_summary": payment_summary,
     }
 
