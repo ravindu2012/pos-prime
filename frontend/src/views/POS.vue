@@ -189,7 +189,7 @@ async function resumeDraft(invoiceName: string) {
 </script>
 
 <template>
-  <div v-if="loading" class="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+  <div v-if="loading" class="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
     <div class="text-gray-400 dark:text-gray-500 text-sm">Loading POS...</div>
   </div>
 

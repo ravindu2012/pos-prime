@@ -5,6 +5,7 @@ import { useCustomerStore } from '@/stores/customer'
 import { usePaymentStore } from '@/stores/payment'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
+import { useTouchDevice } from '@/composables/useTouchDevice'
 import CartItemComp from './CartItem.vue'
 import CartSummary from './CartSummary.vue'
 import CouponCodeInput from './CouponCodeInput.vue'
@@ -12,7 +13,9 @@ import InvoiceDiscount from './InvoiceDiscount.vue'
 import InvoiceOptions from './InvoiceOptions.vue'
 import NumPad from './NumPad.vue'
 import CustomerSelector from '@/components/customer/CustomerSelector.vue'
-import { ShoppingCart, CreditCard, Pause } from 'lucide-vue-next'
+import { ShoppingCart, CreditCard, Pause, Check } from 'lucide-vue-next'
+
+const { isTouchDevice } = useTouchDevice()
 
 const cartStore = useCartStore()
 const customerStore = useCustomerStore()
@@ -54,6 +57,9 @@ function onItemSelect(index: number) {
   cartStore.selectItem(index)
   showNumPad.value = true
   numPadMode.value = 'qty'
+  // Sync keyboard input
+  const item = cartStore.items[index]
+  if (item) keyboardInput.value = String(item.qty)
 }
 
 function onUpdateQty(index: number, qty: number) {
@@ -80,6 +86,19 @@ function onNumPadUpdate(value: number) {
 
 function switchNumPadMode(mode: 'qty' | 'discount' | 'discountAmt' | 'rate') {
   numPadMode.value = mode
+}
+
+// Keyboard input for non-touch desktops
+const keyboardInput = ref('')
+
+function onKeyboardInputChange() {
+  const val = parseFloat(keyboardInput.value) || 0
+  onNumPadUpdate(val)
+}
+
+function closeKeyboardInput() {
+  onKeyboardInputChange()
+  showNumPad.value = false
 }
 
 function openPayment() {
@@ -124,9 +143,9 @@ const emit = defineEmits<{
       </TransitionGroup>
     </div>
 
-    <!-- NumPad (collapsible) -->
+    <!-- NumPad for touch devices -->
     <Transition name="numpad">
-      <div v-if="showNumPad && cartStore.selectedItemIndex !== null" class="px-2 pb-2 border-t border-gray-100 dark:border-gray-800">
+      <div v-if="isTouchDevice && showNumPad && cartStore.selectedItemIndex !== null" class="px-2 pb-2 border-t border-gray-100 dark:border-gray-800">
         <div class="flex gap-1 my-2">
           <button
             v-for="mode in availableNumPadModes"
@@ -146,6 +165,45 @@ const emit = defineEmits<{
           @update:value="onNumPadUpdate"
           @close="showNumPad = false"
         />
+      </div>
+    </Transition>
+
+    <!-- Keyboard input for non-touch desktops -->
+    <Transition name="numpad">
+      <div v-if="!isTouchDevice && showNumPad && cartStore.selectedItemIndex !== null" class="px-3 py-2 border-t border-gray-100 dark:border-gray-800">
+        <div class="flex gap-1 mb-2">
+          <button
+            v-for="mode in availableNumPadModes"
+            :key="mode"
+            @click="() => { switchNumPadMode(mode); const item = cartStore.items[cartStore.selectedItemIndex!]; if (item) keyboardInput = String(mode === 'qty' ? item.qty : mode === 'discount' ? item.discount_percentage : mode === 'discountAmt' ? item.discount_amount : item.rate) }"
+            class="flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-150 uppercase tracking-wider"
+            :class="numPadMode === mode
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+          >
+            {{ mode === 'qty' ? 'Qty' : mode === 'discount' ? 'Disc%' : mode === 'discountAmt' ? 'Disc$' : 'Price' }}
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">{{ numPadLabel }}</span>
+          <input
+            v-model="keyboardInput"
+            type="number"
+            step="any"
+            min="0"
+            @input="onKeyboardInputChange"
+            @keydown.enter="closeKeyboardInput"
+            class="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-semibold text-right focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+            autofocus
+          />
+          <button
+            @click="closeKeyboardInput"
+            class="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-2 py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30"
+          >
+            <Check :size="12" />
+            Done
+          </button>
+        </div>
       </div>
     </Transition>
 

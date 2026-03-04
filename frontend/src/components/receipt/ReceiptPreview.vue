@@ -63,7 +63,7 @@ function newOrder() {
       <div class="relative bg-white dark:bg-gray-900 w-full sm:rounded-2xl sm:shadow-2xl dark:sm:shadow-black/30 sm:max-w-sm max-h-[100dvh] sm:max-h-[90vh] flex flex-col overflow-hidden rounded-t-2xl animate-slide-up sm:animate-scale-in">
 
         <!-- Success header (no-print) -->
-        <div class="no-print bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-5 py-4 text-center relative overflow-hidden">
+        <div class="no-print bg-gradient-to-br from-green-500 to-green-600 text-white px-5 py-4 text-center relative overflow-hidden">
           <div class="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
           <div class="absolute -bottom-3 -left-3 w-14 h-14 bg-white/10 rounded-full" />
           <div class="relative">
@@ -213,7 +213,7 @@ function newOrder() {
                 </div>
               </div>
 
-              <div v-if="invoice.change_amount > 0" class="flex justify-between text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+              <div v-if="invoice.change_amount > 0" class="flex justify-between text-xs text-green-600 dark:text-green-400 font-semibold">
                 <span>Change</span>
                 <span>{{ formatCurrency(invoice.change_amount) }}</span>
               </div>
@@ -224,7 +224,7 @@ function newOrder() {
               </div>
 
               <!-- Loyalty -->
-              <div v-if="invoice.loyalty_points > 0" class="flex justify-between text-xs text-indigo-600 dark:text-indigo-400">
+              <div v-if="invoice.loyalty_points > 0" class="flex justify-between text-xs text-violet-600 dark:text-violet-400">
                 <span>Loyalty Points Redeemed</span>
                 <span>{{ invoice.loyalty_points }} pts ({{ formatCurrency(invoice.loyalty_amount) }})</span>
               </div>

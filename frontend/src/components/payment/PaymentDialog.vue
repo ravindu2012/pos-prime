@@ -6,7 +6,10 @@ import { useCustomerStore } from '@/stores/customer'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
+import { useTouchDevice } from '@/composables/useTouchDevice'
 import { X, Check, Banknote, CreditCard, Wallet, Coins, Award, Eraser, Delete, Loader2 } from 'lucide-vue-next'
+
+const { isTouchDevice } = useTouchDevice()
 
 const cartStore = useCartStore()
 const paymentStore = usePaymentStore()
@@ -120,6 +123,15 @@ function pressKey(key: string) {
   )
 }
 
+function onPaymentInput(e: Event) {
+  const val = (e.target as HTMLInputElement).value
+  displayValue.value = val
+  paymentStore.setPaymentAmount(
+    paymentStore.activePaymentMethod,
+    parseFloat(val) || 0
+  )
+}
+
 function setCashAmount(amount: number) {
   displayValue.value = String(amount)
   paymentStore.setPaymentAmount(paymentStore.activePaymentMethod, amount)
@@ -216,7 +228,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
         <div class="relative bg-white dark:bg-gray-900 w-full sm:max-w-md sm:rounded-2xl sm:shadow-2xl dark:sm:shadow-black/30 max-h-[100dvh] sm:max-h-[92vh] flex flex-col overflow-hidden rounded-t-2xl animate-slide-up sm:animate-scale-in">
 
           <!-- Header with Grand Total -->
-          <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white px-5 pt-4 pb-5 relative overflow-hidden">
+          <div class="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-5 pt-4 pb-5 relative overflow-hidden">
             <!-- Decorative circles -->
             <div class="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full" />
             <div class="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full" />
@@ -250,15 +262,15 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               <div class="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div
                   class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
-                  :class="paidPercentage >= 100 ? 'bg-emerald-400' : 'bg-blue-400'"
+                  :class="paidPercentage >= 100 ? 'bg-green-400' : 'bg-blue-400'"
                   :style="{ width: `${paidPercentage}%` }"
                 />
               </div>
               <div class="flex justify-between text-[10px] text-white/40 mt-1">
                 <span>{{ formatCurrency(paymentStore.totalPaid) }} paid</span>
                 <span v-if="remaining > 0">{{ formatCurrency(remaining) }} remaining</span>
-                <span v-else-if="change > 0" class="text-emerald-300">{{ formatCurrency(change) }} change</span>
-                <span v-else class="text-emerald-300">Fully paid</span>
+                <span v-else-if="change > 0" class="text-green-300">{{ formatCurrency(change) }} change</span>
+                <span v-else class="text-green-300">Fully paid</span>
               </div>
             </div>
           </div>
@@ -294,7 +306,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 <!-- Amount badge -->
                 <span
                   v-if="paymentStore.payments.find(p => p.mode_of_payment === pm.mode_of_payment)?.amount > 0 && paymentStore.activePaymentMethod !== pm.mode_of_payment"
-                  class="ml-0.5 px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-md text-[10px] font-bold"
+                  class="ml-0.5 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded-md text-[10px] font-bold"
                 >
                   {{ formatCurrency(paymentStore.payments.find(p => p.mode_of_payment === pm.mode_of_payment)?.amount ?? 0) }}
                 </span>
@@ -306,7 +318,21 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 font-semibold">
                 {{ paymentStore.activePaymentMethod }} Amount
               </div>
+              <!-- Keyboard input for non-touch -->
+              <input
+                v-if="!isTouchDevice"
+                :value="displayValue"
+                @input="onPaymentInput"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0"
+                class="w-full text-2xl font-bold text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border-2 transition-colors focus:outline-none focus:ring-1 focus:ring-blue-400"
+                :class="activeAmount > 0 ? 'border-blue-200 dark:border-blue-800' : 'border-gray-200 dark:border-gray-700'"
+              />
+              <!-- Touch display -->
               <div
+                v-else
                 class="text-2xl font-bold text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border-2 transition-colors"
                 :class="activeAmount > 0 ? 'border-blue-200 dark:border-blue-800' : 'border-gray-200 dark:border-gray-700'"
               >
@@ -320,14 +346,14 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 v-for="amount in cashShortcuts"
                 :key="amount"
                 @click="setCashAmount(amount)"
-                class="py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-95 transition-all duration-150 border border-emerald-100 dark:border-emerald-800"
+                class="py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl text-xs font-bold hover:bg-green-100 dark:hover:bg-green-900/40 active:scale-95 transition-all duration-150 border border-green-100 dark:border-green-800"
               >
                 {{ formatCurrency(amount) }}
               </button>
             </div>
 
-            <!-- NumPad -->
-            <div class="grid grid-cols-4 gap-1.5">
+            <!-- NumPad (touch devices only) -->
+            <div v-if="isTouchDevice" class="grid grid-cols-4 gap-1.5">
               <button
                 v-for="key in numpadKeys"
                 :key="key"
@@ -356,33 +382,33 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
             <!-- Loyalty Points -->
             <div
               v-if="customerStore.loyaltyProgram && customerStore.loyaltyPoints > 0"
-              class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3"
+              class="bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800 rounded-xl p-3"
             >
               <label class="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
                   v-model="redeemLoyalty"
-                  class="w-4 h-4 rounded border-indigo-300 dark:border-indigo-600 text-indigo-600 focus:ring-indigo-500"
+                  class="w-4 h-4 rounded border-violet-300 dark:border-violet-600 text-violet-600 focus:ring-violet-500"
                 />
                 <div class="flex-1">
-                  <div class="text-xs font-semibold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                  <div class="text-xs font-semibold text-violet-800 dark:text-violet-300 flex items-center gap-1.5">
                     <Award :size="14" />
                     Redeem Loyalty Points
                   </div>
-                  <div class="text-[10px] text-indigo-500 dark:text-indigo-400 mt-0.5">
+                  <div class="text-[10px] text-violet-500 dark:text-violet-400 mt-0.5">
                     {{ customerStore.loyaltyPoints }} pts available ({{ formatCurrency(customerStore.maxRedeemableAmount) }})
                   </div>
                 </div>
               </label>
               <div v-if="redeemLoyalty" class="mt-2 pl-6">
                 <div class="flex items-center gap-2">
-                  <label class="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium shrink-0">Points:</label>
+                  <label class="text-[10px] text-violet-600 dark:text-violet-400 font-medium shrink-0">Points:</label>
                   <input
                     v-model.number="loyaltyPointsToRedeem"
                     type="number"
                     :min="0"
                     :max="customerStore.loyaltyPoints"
-                    class="flex-1 rounded-lg border border-indigo-200 dark:border-indigo-700 px-2.5 py-1.5 text-xs text-right focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    class="flex-1 rounded-lg border border-violet-200 dark:border-violet-700 px-2.5 py-1.5 text-xs text-right focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
@@ -429,9 +455,9 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
             </div>
 
             <!-- Change Display -->
-            <div v-if="change > 0" class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-center">
-              <div class="text-[10px] text-emerald-500 dark:text-emerald-400 uppercase tracking-wider font-semibold mb-0.5">Change Due</div>
-              <div class="text-xl font-bold text-emerald-700 dark:text-emerald-400">{{ formatCurrency(change) }}</div>
+            <div v-if="change > 0" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 text-center">
+              <div class="text-[10px] text-green-500 dark:text-green-400 uppercase tracking-wider font-semibold mb-0.5">Change Due</div>
+              <div class="text-xl font-bold text-green-700 dark:text-green-400">{{ formatCurrency(change) }}</div>
             </div>
           </div>
 
@@ -442,7 +468,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               :disabled="!canSubmit"
               class="w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
               :class="canSubmit
-                ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98] shadow-lg shadow-emerald-600/20'
+                ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] shadow-lg shadow-green-600/20'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               "
             >
@@ -462,8 +488,8 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 @keyframes slide-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: trangrayY(100%); opacity: 0; }
+  to { transform: trangrayY(0); opacity: 1; }
 }
 @keyframes scale-in {
   from { transform: scale(0.95); opacity: 0; }

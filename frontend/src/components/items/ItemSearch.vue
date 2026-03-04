@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import { Search, X, ScanBarcode } from 'lucide-vue-next'
+import { useTouchDevice } from '@/composables/useTouchDevice'
+
+const { isTouchDevice } = useTouchDevice()
 
 const props = defineProps<{
   modelValue: string
@@ -73,6 +76,7 @@ function clear() {
         <X :size="14" />
       </button>
       <button
+        v-if="isTouchDevice"
         @click="emit('openScanner')"
         class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
         title="Scan barcode"

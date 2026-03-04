@@ -50,7 +50,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
+  <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
     <!-- Desktop Sidebar -->
     <aside
       class="hidden lg:flex lg:w-[60px] flex-col items-center bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 py-3 gap-1"

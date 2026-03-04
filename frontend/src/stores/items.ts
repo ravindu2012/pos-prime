@@ -15,14 +15,12 @@ export const useItemsStore = defineStore('items', () => {
   const hasMore = ref(true)
   const error = ref<string | null>(null)
 
-  async function fetchItems(start = 0, posProfile?: string, hideUnavailable?: boolean) {
+  async function fetchItems(start = 0, posProfile?: string) {
     const currentId = ++fetchRequestId
     loading.value = true
     try {
       // Lazy import to avoid circular deps
-      const { useSettingsStore } = await import('@/stores/settings')
       const { usePosSessionStore } = await import('@/stores/posSession')
-      const settings = useSettingsStore()
       const session = usePosSessionStore()
 
       const profile = posProfile || session.posProfile || ''
@@ -37,20 +35,14 @@ export const useItemsStore = defineStore('items', () => {
 
       if (currentId !== fetchRequestId) return []
 
-      let newItems: Item[] = data.items || []
-
-      // Filter out-of-stock items if setting enabled
-      const shouldHide = hideUnavailable ?? settings.hideUnavailableItems
-      if (shouldHide) {
-        newItems = newItems.filter((item: Item) => item.actual_qty > 0)
-      }
+      const newItems: Item[] = data.items || []
 
       if (start === 0) {
         items.value = newItems
       } else {
         items.value = [...items.value, ...newItems]
       }
-      hasMore.value = (data.items || []).length === pageLength.value
+      hasMore.value = newItems.length === pageLength.value
       return newItems
     } catch (e) {
       if (currentId !== fetchRequestId) return []
