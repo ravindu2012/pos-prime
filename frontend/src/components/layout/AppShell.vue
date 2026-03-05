@@ -13,6 +13,7 @@ import {
   X,
   PauseCircle,
   User,
+  Users,
   Maximize,
   Minimize,
   RotateCcw,
@@ -32,9 +33,13 @@ const userImage = ref<string | null>(null)
 const navItems = [
   { name: 'POS', path: '/posify', icon: Grid3x3 },
   { name: 'Orders', path: '/posify/orders', icon: ClipboardList },
+  { name: 'Customers', path: '/posify/customers', icon: Users },
 ]
 
-const currentPath = computed(() => route.path)
+const currentPath = computed(() => {
+  if (route.path.startsWith('/posify/customers')) return '/posify/customers'
+  return route.path
+})
 const draftCount = computed(() => draftsStore.drafts.length)
 
 const userInitials = computed(() => {
