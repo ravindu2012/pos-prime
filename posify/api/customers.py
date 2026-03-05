@@ -9,15 +9,27 @@ def search_customers(search_term="", pos_profile=""):
 
     If pos_profile has customer_groups configured, only returns customers
     belonging to those groups.
+
+    Phone numbers are normalized so local format (07xxxxxxxx) matches
+    international format (+947xxxxxxxx) and vice versa.
     """
     if not search_term or len(search_term) < 2:
         return []
 
     search = f"%{search_term}%"
 
+    # Normalize phone: extract last 9 digits to match regardless of country code
+    digits_only = re.sub(r"\D", "", search_term)
+    phone_suffix_condition = ""
+    params = {"search": search}
+
+    if len(digits_only) >= 7:
+        core_digits = digits_only[-9:]
+        params["phone_suffix"] = f"%{core_digits}"
+        phone_suffix_condition = "OR mobile_no LIKE %(phone_suffix)s"
+
     # Check if POS Profile restricts customer groups
     group_filter = ""
-    params = {"search": search}
 
     if pos_profile:
         profile_groups = frappe.get_all(
@@ -40,6 +52,7 @@ def search_customers(search_term="", pos_profile=""):
             OR name LIKE %(search)s
             OR mobile_no LIKE %(search)s
             OR email_id LIKE %(search)s
+            {phone_suffix_condition}
         )
         ORDER BY customer_name ASC
         LIMIT 20

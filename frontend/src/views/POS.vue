@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
@@ -9,6 +9,9 @@ import { usePaymentStore } from '@/stores/payment'
 import { useDraftsStore } from '@/stores/drafts'
 import { useItemsStore } from '@/stores/items'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+import { useBroadcastDisplay, type DisplayMessage } from '@/composables/useBroadcastDisplay'
+import { call } from 'frappe-ui'
+import { useSerialDisplay } from '@/composables/useSerialDisplay'
 import AppShell from '@/components/layout/AppShell.vue'
 import ItemGrid from '@/components/items/ItemGrid.vue'
 import Cart from '@/components/cart/Cart.vue'
@@ -26,6 +29,10 @@ const customerStore = useCustomerStore()
 const paymentStore = usePaymentStore()
 const draftsStore = useDraftsStore()
 const itemsStore = useItemsStore()
+
+// Customer display — scoped by POS Opening Entry so multiple sessions don't conflict
+const { sendUpdate: sendDisplayUpdate, onUpdate: onDisplayMessage, close: closeDisplay } = useBroadcastDisplay(sessionStore.openingEntry || undefined)
+const serialDisplay = useSerialDisplay()
 
 const mobileTab = ref<'items' | 'cart'>('items')
 const showReceipt = ref(false)
@@ -50,7 +57,85 @@ useKeyboardShortcuts({
   onNewOrder: () => startNewOrder(),
 })
 
+// Company info for display
+const companyLogo = ref<string | null>(null)
+
+async function sendInitToDisplay() {
+  // Fetch company logo
+  let logo: string | null = null
+  if (sessionStore.company) {
+    try {
+      const doc = await call('frappe.client.get_value', {
+        doctype: 'Company',
+        filters: { name: sessionStore.company },
+        fieldname: ['company_logo'],
+      })
+      if (doc?.company_logo) logo = doc.company_logo
+    } catch { /* ignore */ }
+  }
+  companyLogo.value = logo
+  sendDisplayUpdate({
+    type: 'init',
+    payload: {
+      companyName: sessionStore.company || '',
+      companyLogo: logo,
+      currency: settingsStore.currency || 'USD',
+    },
+  })
+}
+
 onMounted(async () => {
+  // Listen for messages from display immediately — must be before any awaits
+  // so the handler is registered even if initialization partially fails
+  onDisplayMessage(async (message: DisplayMessage) => {
+    if (message.type === 'customer_mobile') {
+      const mobile = message.payload.mobile
+      try {
+        const results = await customerStore.searchCustomers(mobile, sessionStore.posProfile)
+        if (results && results.length > 0) {
+          await customerStore.setCustomer(results[0].name)
+          sendDisplayUpdate({
+            type: 'customer_result',
+            payload: { found: true, customerName: results[0].customer_name || results[0].name },
+          })
+          // Send cart_update so pole display transitions to cart view with customer name
+          const currency = settingsStore.currency || 'USD'
+          sendDisplayUpdate({
+            type: 'cart_update',
+            payload: {
+              items: cartStore.items.map((item) => ({
+                item_name: item.item_name,
+                qty: item.qty,
+                rate: item.rate,
+                amount: item.amount,
+              })),
+              subtotal: cartStore.subtotal,
+              taxAmount: cartStore.taxAmount,
+              grandTotal: cartStore.grandTotal,
+              roundedTotal: cartStore.roundedTotal,
+              totalItems: cartStore.totalItems,
+              currency,
+              customerName: results[0].customer_name || results[0].name,
+              companyName: sessionStore.company || null,
+              discountValue: cartStore.discountValue,
+              discountType: cartStore.discountType,
+            },
+          })
+        } else {
+          sendDisplayUpdate({
+            type: 'customer_result',
+            payload: { found: false, customerName: null },
+          })
+        }
+      } catch {
+        sendDisplayUpdate({
+          type: 'customer_result',
+          payload: { found: false, customerName: null },
+        })
+      }
+    }
+  })
+
   try {
     await sessionStore.checkOpeningEntry()
     if (!sessionStore.hasOpenShift) {
@@ -62,11 +147,18 @@ onMounted(async () => {
     if (settingsStore.posProfile?.customer && !customerStore.customer) {
       await customerStore.setCustomer(settingsStore.posProfile.customer)
     }
+    sendDisplayUpdate({ type: 'idle' })
+    // Send company info to display
+    sendInitToDisplay()
   } catch (e) {
     console.error('POS initialization error:', e)
   } finally {
     loading.value = false
   }
+})
+
+onUnmounted(() => {
+  closeDisplay()
 })
 
 // Watch for invoice completion to show receipt
@@ -75,8 +167,110 @@ watch(
   (invoice) => {
     if (invoice) {
       showReceipt.value = true
+      // Notify customer display
+      const currency = settingsStore.currency || 'USD'
+      sendDisplayUpdate({
+        type: 'payment_complete',
+        payload: { grandTotal: invoice.rounded_total || invoice.grand_total || 0, currency },
+      })
+      if (serialDisplay.isConnected.value) {
+        serialDisplay.sendToVFD('  Thank You!', `Total: ${(invoice.rounded_total || invoice.grand_total || 0).toFixed(2)}`)
+      }
+      setTimeout(() => {
+        sendDisplayUpdate({ type: 'idle' })
+        serialDisplay.clearDisplay()
+      }, 5000)
     }
   }
+)
+
+// Broadcast cart updates to customer display
+watch(
+  () => [
+    cartStore.items.length,
+    cartStore.grandTotal,
+    cartStore.totalItems,
+    cartStore.subtotal,
+    cartStore.taxAmount,
+    cartStore.roundedTotal,
+    cartStore.discountValue,
+  ],
+  () => {
+    if (cartStore.items.length === 0) {
+      sendDisplayUpdate({ type: 'idle' })
+      serialDisplay.clearDisplay()
+      return
+    }
+    const currency = settingsStore.currency || 'USD'
+    sendDisplayUpdate({
+      type: 'cart_update',
+      payload: {
+        items: cartStore.items.map((item) => ({
+          item_name: item.item_name,
+          qty: item.qty,
+          rate: item.rate,
+          amount: item.amount,
+        })),
+        subtotal: cartStore.subtotal,
+        taxAmount: cartStore.taxAmount,
+        grandTotal: cartStore.grandTotal,
+        roundedTotal: cartStore.roundedTotal,
+        totalItems: cartStore.totalItems,
+        currency,
+        customerName: customerStore.customer?.customer_name || null,
+        companyName: sessionStore.company || null,
+        discountValue: cartStore.discountValue,
+        discountType: cartStore.discountType,
+      },
+    })
+    // VFD: show last added item + total
+    if (serialDisplay.isConnected.value) {
+      const lastItem = cartStore.items[cartStore.items.length - 1]
+      const total = (cartStore.roundedTotal || cartStore.grandTotal).toFixed(2)
+      serialDisplay.sendToVFD(
+        `${lastItem.item_name.substring(0, 14)} x${lastItem.qty}`,
+        `TOTAL: ${total.padStart(13)}`
+      )
+    }
+  },
+  { deep: true }
+)
+
+// Helper to build payment display payload
+function buildPaymentPayload() {
+  const grandTotal = cartStore.roundedTotal || cartStore.grandTotal
+  return {
+    grandTotal,
+    currency: settingsStore.currency || 'USD',
+    payments: paymentStore.payments.filter(p => p.amount > 0),
+    customerName: customerStore.customer?.customer_name || null,
+    totalPaid: paymentStore.totalPaid,
+    changeDue: paymentStore.changeAmount(grandTotal),
+  }
+}
+
+// Broadcast payment start
+watch(
+  () => paymentStore.showPaymentDialog,
+  (show) => {
+    if (show) {
+      sendDisplayUpdate({ type: 'payment_start', payload: buildPaymentPayload() })
+      if (serialDisplay.isConnected.value) {
+        serialDisplay.sendToVFD('Processing...', `Total: ${(cartStore.roundedTotal || cartStore.grandTotal).toFixed(2).padStart(13)}`)
+      }
+    }
+  }
+)
+
+// Live-update pole display as cashier changes payment amounts
+watch(
+  () => paymentStore.payments.map(p => p.amount),
+  () => {
+    if (paymentStore.showPaymentDialog) {
+      sendDisplayUpdate({ type: 'payment_start', payload: buildPaymentPayload() })
+    }
+  },
+  { deep: true }
 )
 
 async function startNewOrder() {
@@ -84,6 +278,8 @@ async function startNewOrder() {
   paymentStore.$reset()
   draftsStore.clearActiveDraft()
   showReceipt.value = false
+  sendDisplayUpdate({ type: 'idle' })
+  serialDisplay.clearDisplay()
   // Reset to default customer
   customerStore.$reset()
   if (settingsStore.posProfile?.customer) {
