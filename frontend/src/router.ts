@@ -24,6 +24,16 @@ const routes = [
     name: 'Orders',
     meta: { requiresShift: true },
   },
+  {
+    path: '/posify/customers',
+    component: () => import('./views/CustomerDisplay.vue'),
+    name: 'Customers',
+  },
+  {
+    path: '/posify/customers/:id',
+    component: () => import('./views/CustomerDisplay.vue'),
+    name: 'CustomerDetail',
+  },
 ]
 
 const router = createRouter({
