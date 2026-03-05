@@ -1,0 +1,210 @@
+{
+  "charts": [],
+  "content": "[{\"id\":\"nc_total_pos_sales\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Sales\",\"col\":3}},{\"id\":\"nc_pos_invoices_count\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"POS Invoices Count\",\"col\":3}},{\"id\":\"nc_total_pos_returns\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Returns\",\"col\":3}},{\"id\":\"nc_open_pos_sessions\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open POS Sessions\",\"col\":3}},{\"id\":\"spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_open_posify\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Open Posify POS\",\"col\":4}},{\"id\":\"sc_pos_invoice\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Invoice\",\"col\":4}},{\"id\":\"sc_pos_opening\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Opening Entry\",\"col\":4}},{\"id\":\"sc_pos_closing\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Closing Entry\",\"col\":4}},{\"id\":\"sc_pos_profile\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Profile\",\"col\":4}},{\"id\":\"sc_customer\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":4}},{\"id\":\"spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header_reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"card_pos\",\"type\":\"card\",\"data\":{\"card_name\":\"Point of Sale\",\"col\":4}},{\"id\":\"card_reports\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"card_masters\",\"type\":\"card\",\"data\":{\"card_name\":\"Masters\",\"col\":4}}]",
+  "creation": "2026-03-04 00:00:00.000000",
+  "modified": "2026-03-05 00:00:00.000000",
+  "modified_by": "Administrator",
+  "custom_blocks": [],
+  "docstatus": 0,
+  "doctype": "Workspace",
+  "for_user": "",
+  "hide_custom": 0,
+  "icon": "retail",
+  "idx": 0,
+  "is_hidden": 0,
+  "label": "Posify",
+  "links": [
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Point of Sale",
+      "link_count": 0,
+      "onboard": 0,
+      "type": "Card Break"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "POS Invoice",
+      "link_count": 0,
+      "link_to": "POS Invoice",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "POS Opening Entry",
+      "link_count": 0,
+      "link_to": "POS Opening Entry",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "POS Closing Entry",
+      "link_count": 0,
+      "link_to": "POS Closing Entry",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "POS Profile",
+      "link_count": 0,
+      "link_to": "POS Profile",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Reports",
+      "link_count": 0,
+      "onboard": 0,
+      "type": "Card Break"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Accounts Receivable",
+      "link_count": 0,
+      "link_to": "Accounts Receivable",
+      "link_type": "Report",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Sales Register",
+      "link_count": 0,
+      "link_to": "Sales Register",
+      "link_type": "Report",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Item-wise Sales Register",
+      "link_count": 0,
+      "link_to": "Item-wise Sales Register",
+      "link_type": "Report",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Masters",
+      "link_count": 0,
+      "onboard": 0,
+      "type": "Card Break"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Customer",
+      "link_count": 0,
+      "link_to": "Customer",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Item",
+      "link_count": 0,
+      "link_to": "Item",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Mode of Payment",
+      "link_count": 0,
+      "link_to": "Mode of Payment",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Item Group",
+      "link_count": 0,
+      "link_to": "Item Group",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    }
+  ],
+  "module": "Posify",
+  "name": "Posify",
+  "number_cards": [
+    {
+      "label": "Total POS Sales",
+      "number_card_name": "Total POS Sales"
+    },
+    {
+      "label": "POS Invoices Count",
+      "number_card_name": "POS Invoices Count"
+    },
+    {
+      "label": "Total POS Returns",
+      "number_card_name": "Total POS Returns"
+    },
+    {
+      "label": "Open POS Sessions",
+      "number_card_name": "Open POS Sessions"
+    }
+  ],
+  "public": 1,
+  "shortcuts": [
+    {
+      "label": "Open Posify POS",
+      "type": "URL",
+      "url": "/posify"
+    },
+    {
+      "label": "POS Invoice",
+      "link_to": "POS Invoice",
+      "type": "DocType"
+    },
+    {
+      "color": "Yellow",
+      "format": "{} Open",
+      "label": "POS Opening Entry",
+      "link_to": "POS Opening Entry",
+      "stats_filter": "{\n    \"status\": \"Open\",\n    \"docstatus\": 1\n}",
+      "type": "DocType"
+    },
+    {
+      "label": "POS Closing Entry",
+      "link_to": "POS Closing Entry",
+      "type": "DocType"
+    },
+    {
+      "label": "POS Profile",
+      "link_to": "POS Profile",
+      "type": "DocType"
+    },
+    {
+      "label": "Customer",
+      "link_to": "Customer",
+      "type": "DocType"
+    }
+  ],
+  "standard": 1,
+  "title": "Posify"
+}
