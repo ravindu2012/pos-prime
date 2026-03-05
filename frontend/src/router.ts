@@ -25,6 +25,11 @@ const routes = [
     meta: { requiresShift: true },
   },
   {
+    path: '/posify/display',
+    component: () => import('./views/CustomerPoleDisplay.vue'),
+    name: 'PoleDisplay',
+  },
+  {
     path: '/posify/customers',
     component: () => import('./views/CustomerDisplay.vue'),
     name: 'Customers',

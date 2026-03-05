@@ -17,13 +17,16 @@ import {
   Maximize,
   Minimize,
   RotateCcw,
+  Monitor,
 } from 'lucide-vue-next'
+import DisplayControls from '@/components/display/DisplayControls.vue'
 
 const router = useRouter()
 const route = useRoute()
 const draftsStore = useDraftsStore()
 const sessionStore = usePosSessionStore()
 const sidebarOpen = ref(false)
+const showDisplayPopover = ref(false)
 
 const companyLogo = ref<string | null>(null)
 const companyAbbr = ref('P')
@@ -197,6 +200,34 @@ const emit = defineEmits<{
         <RotateCcw :size="18" />
         <span class="text-[9px] mt-0.5 font-semibold">Return</span>
       </button>
+
+      <!-- Display -->
+      <div class="relative">
+        <button
+          @click="showDisplayPopover = !showDisplayPopover"
+          aria-label="Customer Display"
+          class="flex flex-col items-center justify-center w-11 h-11 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-500 dark:hover:text-purple-400 transition-all duration-200"
+          :class="showDisplayPopover ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : ''"
+        >
+          <Monitor :size="18" />
+          <span class="text-[9px] mt-0.5 font-semibold">Display</span>
+        </button>
+        <Transition name="fade">
+          <div
+            v-if="showDisplayPopover"
+            class="fixed inset-0 z-40"
+            @click="showDisplayPopover = false"
+          />
+        </Transition>
+        <Transition name="fade">
+          <div
+            v-if="showDisplayPopover"
+            class="absolute left-full top-0 ml-2 z-50"
+          >
+            <DisplayControls />
+          </div>
+        </Transition>
+      </div>
 
       <div class="flex-1" />
 
