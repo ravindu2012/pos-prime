@@ -54,7 +54,7 @@ async function searchItems() {
   }
   searchLoading.value = true
   try {
-    const data = await call('posify.api.items.get_items', {
+    const data = await call('pos_prime.api.items.get_items', {
       start: 0,
       page_length: 10,
       search_term: searchInput.value,
@@ -134,7 +134,7 @@ async function processReturn() {
 
   processing.value = true
   try {
-    await call('posify.api.orders.create_manual_return', {
+    await call('pos_prime.api.orders.create_manual_return', {
       customer,
       pos_profile: sessionStore.posProfile,
       items: returnItems.value.map((item) => ({

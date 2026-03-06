@@ -1,5 +1,5 @@
 [project]
-name = "posify"
+name = "pos_prime"
 authors = [
     { name = "Ravindu Gajanayaka", email = "ravindu@example.com"}
 ]

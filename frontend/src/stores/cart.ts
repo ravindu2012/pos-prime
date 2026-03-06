@@ -236,7 +236,7 @@ export const useCartStore = defineStore('cart', () => {
     const currentId = ++taxRequestId
     taxCalculating.value = true
     try {
-      const data = await call('posify.api.taxes.calculate_taxes', {
+      const data = await call('pos_prime.api.taxes.calculate_taxes', {
         pos_profile: profile,
         customer: cust,
         items: items.value.map((item) => ({

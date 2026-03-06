@@ -37,7 +37,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loading.value = true
     try {
       // Get POS profiles and open entry in a single call
-      const data = await call('posify.api.pos_session.get_opening_data')
+      const data = await call('pos_prime.api.pos_session.get_opening_data')
       posProfiles.value = data?.pos_profiles || []
 
       return {
@@ -53,7 +53,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loading.value = true
     try {
       const data = await call(
-        'posify.api.pos_session.get_pos_profile',
+        'pos_prime.api.pos_session.get_pos_profile',
         { pos_profile: profileName }
       )
       posProfile.value = data as POSProfile

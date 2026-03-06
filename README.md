@@ -1,6 +1,6 @@
 <div align="center">
 
-# Posify
+# POS Prime
 
 **A modern, fast Point of Sale for ERPNext**
 
@@ -13,9 +13,9 @@ Built for speed, touch screens, and real retail workflows.
 
 ---
 
-## Why Posify?
+## Why POS Prime?
 
-ERPNext's built-in POS is functional but limited. Posify is a complete replacement built from the ground up with Vue 3, designed for businesses that need a fast, reliable, and modern point of sale.
+ERPNext's built-in POS is functional but limited. POS Prime is a complete replacement built from the ground up with Vue 3, designed for businesses that need a fast, reliable, and modern point of sale.
 
 - **Instant item search** with barcode scanning and manual lookup
 - **Real-time stock validation** so you never sell what you don't have
@@ -27,7 +27,7 @@ ERPNext's built-in POS is functional but limited. Posify is a complete replaceme
 
 ## Zero Modifications to ERPNext
 
-Posify does **not** add custom fields, custom doctypes, or modify any existing ERPNext schema. It works entirely with ERPNext's standard doctypes:
+POS Prime does **not** add custom fields, custom doctypes, or modify any existing ERPNext schema. It works entirely with ERPNext's standard doctypes:
 
 - **POS Profile** - your existing POS configuration
 - **POS Opening Entry** - standard shift management
@@ -36,9 +36,9 @@ Posify does **not** add custom fields, custom doctypes, or modify any existing E
 - **Item Tax Template, Sales Taxes and Charges** - uses your existing tax setup
 
 **Why this matters:**
-- Upgrade ERPNext freely - Posify will never block or break your upgrades
-- Uninstall cleanly - remove Posify and nothing changes in your ERPNext data
-- No data lock-in - every invoice Posify creates is a standard POS Invoice, visible in Desk and reports
+- Upgrade ERPNext freely - POS Prime will never block or break your upgrades
+- Uninstall cleanly - remove POS Prime and nothing changes in your ERPNext data
+- No data lock-in - every invoice POS Prime creates is a standard POS Invoice, visible in Desk and reports
 - Works alongside ERPNext's built-in POS - use both if you want
 
 ---
@@ -163,7 +163,7 @@ Customer display with phone number entry for loyalty point lookup.
 
 ## POS Profile Field Coverage
 
-Posify reads **38 of 40 meaningful fields** from the standard POS Profile doctype (95% coverage). The following fields are intentionally not used:
+POS Prime reads **38 of 40 meaningful fields** from the standard POS Profile doctype (95% coverage). The following fields are intentionally not used:
 
 | Field | Reason |
 |-------|--------|
@@ -188,21 +188,21 @@ All 12 layout fields (Section Break, Column Break) are structural and only relev
 
 ```bash
 cd $PATH_TO_YOUR_BENCH
-bench get-app https://github.com/ravindu2012/posify --branch main
-bench --site your-site.localhost install-app posify
+bench get-app https://github.com/ravindu2012/pos-prime --branch main
+bench --site your-site.localhost install-app pos_prime
 ```
 
-After installation, navigate to `/posify` on your site to open the POS.
+After installation, navigate to `/pos-prime` on your site to open the POS.
 
 ### Kiosk Mode
 
-1. Open a POS session in Posify
-2. Navigate to `/posify/kiosk` on your touchscreen device
+1. Open a POS session in POS Prime
+2. Navigate to `/pos-prime/kiosk` on your touchscreen device
 3. The kiosk auto-detects the open session
 
 ### Customer Display
 
-1. Open a POS session in Posify
+1. Open a POS session in POS Prime
 2. Click the **Customer Display** panel in the sidebar
 3. Open the display URL on your second screen
 
@@ -222,7 +222,7 @@ After installation, navigate to `/posify` on your site to open the POS.
 This app uses `pre-commit` for code formatting and linting:
 
 ```bash
-cd apps/posify
+cd apps/pos-prime
 pre-commit install
 ```
 

@@ -54,7 +54,7 @@ export const useOrdersStore = defineStore('orders', () => {
     const currentId = ++fetchRequestId
     loading.value = true
     try {
-      const data = await call('posify.api.orders.get_past_orders', {
+      const data = await call('pos_prime.api.orders.get_past_orders', {
         pos_profile: posProfile,
         search_term: searchTerm.value,
         status: statusFilter.value,
@@ -85,7 +85,7 @@ export const useOrdersStore = defineStore('orders', () => {
   async function loadOrderDetail(invoiceName: string) {
     loadingDetail.value = true
     try {
-      const data = await call('posify.api.orders.get_order_detail', {
+      const data = await call('pos_prime.api.orders.get_order_detail', {
         invoice_name: invoiceName,
       })
       selectedOrder.value = data
@@ -101,7 +101,7 @@ export const useOrdersStore = defineStore('orders', () => {
 
   async function createReturn(sourceInvoice: string) {
     try {
-      const data = await call('posify.api.orders.create_return_invoice', {
+      const data = await call('pos_prime.api.orders.create_return_invoice', {
         source_invoice: sourceInvoice,
       })
       return data

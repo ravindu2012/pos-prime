@@ -34,7 +34,7 @@ function update(field: string, value: any) {
 onMounted(async () => {
   // Fetch link options in parallel
   try {
-    const data = await call('posify.api.pos_session.get_invoice_option_lists')
+    const data = await call('pos_prime.api.pos_session.get_invoice_option_lists')
     if (data) {
       salesPartners.value = (data.sales_partners || []).map((r: any) => r.name)
       projects.value = (data.projects || []).map((r: any) => r.name)

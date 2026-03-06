@@ -32,13 +32,13 @@ onMounted(async () => {
   loading.value = true
   try {
     if (props.hasBatchNo) {
-      batches.value = await call('posify.api.stock.get_batch_nos', {
+      batches.value = await call('pos_prime.api.stock.get_batch_nos', {
         item_code: props.itemCode,
         warehouse,
       }) || []
     }
     if (props.hasSerialNo && !props.hasBatchNo) {
-      serialNos.value = await call('posify.api.stock.get_serial_nos', {
+      serialNos.value = await call('pos_prime.api.stock.get_serial_nos', {
         item_code: props.itemCode,
         warehouse,
       }) || []
@@ -53,7 +53,7 @@ async function selectBatch(batchNo: string) {
   if (props.hasSerialNo) {
     loading.value = true
     try {
-      serialNos.value = await call('posify.api.stock.get_serial_nos', {
+      serialNos.value = await call('pos_prime.api.stock.get_serial_nos', {
         item_code: props.itemCode,
         warehouse,
         batch_no: batchNo,
@@ -87,7 +87,7 @@ async function autoFetchSerials() {
   const needed = props.qty || 1
   autoFetching.value = true
   try {
-    const result = await call('posify.api.stock.auto_fetch_serial_nos', {
+    const result = await call('pos_prime.api.stock.auto_fetch_serial_nos', {
       item_code: props.itemCode,
       warehouse,
       qty: needed,

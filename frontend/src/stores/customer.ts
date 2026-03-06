@@ -28,7 +28,7 @@ export const useCustomerStore = defineStore('customer', () => {
 
   async function searchCustomers(searchTerm: string, posProfile?: string) {
     try {
-      const data = await call('posify.api.customers.search_customers', {
+      const data = await call('pos_prime.api.customers.search_customers', {
         search_term: searchTerm,
         pos_profile: posProfile || '',
       })
@@ -41,7 +41,7 @@ export const useCustomerStore = defineStore('customer', () => {
   async function setCustomer(customerName: string) {
     loading.value = true
     try {
-      const data = await call('posify.api.customers.get_customer', {
+      const data = await call('pos_prime.api.customers.get_customer', {
         customer_name: customerName,
       })
       customer.value = {
@@ -59,7 +59,7 @@ export const useCustomerStore = defineStore('customer', () => {
       loyaltyData.value = null
       if (data.loyalty_program) {
         try {
-          const loyalty = await call('posify.api.loyalty.get_customer_loyalty', {
+          const loyalty = await call('pos_prime.api.loyalty.get_customer_loyalty', {
             customer: customerName,
           })
           if (loyalty) {
@@ -79,8 +79,8 @@ export const useCustomerStore = defineStore('customer', () => {
       selectedContact.value = null
       try {
         const [addrData, contactData] = await Promise.all([
-          call('posify.api.addresses.get_customer_addresses', { customer: customerName }),
-          call('posify.api.addresses.get_customer_contacts', { customer: customerName }),
+          call('pos_prime.api.addresses.get_customer_addresses', { customer: customerName }),
+          call('pos_prime.api.addresses.get_customer_contacts', { customer: customerName }),
         ])
         addresses.value = addrData || []
         contacts.value = contactData || []
@@ -112,7 +112,7 @@ export const useCustomerStore = defineStore('customer', () => {
   }) {
     loading.value = true
     try {
-      const data = await call('posify.api.customers.quick_create_customer', args)
+      const data = await call('pos_prime.api.customers.quick_create_customer', args)
       if (data) {
         await setCustomer(data)
       }

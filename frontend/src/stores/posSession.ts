@@ -17,7 +17,7 @@ export const usePosSessionStore = defineStore('posSession', () => {
     try {
       // check_opening_entry returns a LIST of open POS Opening Entries
       const data = await call(
-        'posify.api.pos_session.check_opening_entry',
+        'pos_prime.api.pos_session.check_opening_entry',
         { user: session.user.data }
       )
       const openVouchers = Array.isArray(data) ? data : []
@@ -41,7 +41,7 @@ export const usePosSessionStore = defineStore('posSession', () => {
     loading.value = true
     try {
       const data = await call(
-        'posify.api.pos_session.create_opening_entry',
+        'pos_prime.api.pos_session.create_opening_entry',
         {
           pos_profile: args.pos_profile,
           company: args.company,
@@ -66,7 +66,7 @@ export const usePosSessionStore = defineStore('posSession', () => {
   }[]) {
     loading.value = true
     try {
-      const data = await call('posify.api.pos_session.close_shift', {
+      const data = await call('pos_prime.api.pos_session.close_shift', {
         opening_entry: openingEntry.value,
         closing_amounts: closingAmounts,
       })

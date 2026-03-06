@@ -25,7 +25,7 @@ export const useItemsStore = defineStore('items', () => {
 
       const profile = posProfile || session.posProfile || ''
 
-      const data = await call('posify.api.items.get_items', {
+      const data = await call('pos_prime.api.items.get_items', {
         start,
         page_length: pageLength.value,
         search_term: searchTerm.value,
@@ -61,7 +61,7 @@ export const useItemsStore = defineStore('items', () => {
       const session = usePosSessionStore()
       const profile = posProfile || session.posProfile || ''
 
-      const data = await call('posify.api.items.get_item_groups', {
+      const data = await call('pos_prime.api.items.get_item_groups', {
         pos_profile: profile,
       })
       itemGroups.value = ['All Item Groups', ...(data || [])]
@@ -77,7 +77,7 @@ export const useItemsStore = defineStore('items', () => {
       const profile = posProfile || session.posProfile || ''
 
       const data = await call(
-        'posify.api.items.search_barcode',
+        'pos_prime.api.items.search_barcode',
         { search_value: barcode, pos_profile: profile }
       )
       return data
