@@ -225,7 +225,6 @@ async function lookupPhone(phone: string) {
   matchedCustomerName.value = null
   matchedLoyaltyPoints.value = 0
 
-  // Strip non-digits for matching (handles spaces, dashes, parentheses, plus signs)
   const digits = phone.replace(/\D/g, '')
   if (!digits) {
     phoneLookupError.value = 'Please enter a valid phone number.'
@@ -233,25 +232,12 @@ async function lookupPhone(phone: string) {
     return
   }
 
-  // Strip leading 0 (trunk prefix) for international matching
-  // e.g. customer enters 0778407616 → also search for 778407616
-  // so it matches +94778407616, +44778407616, etc.
-  const withoutTrunk = digits.startsWith('0') ? digits.slice(1) : digits
-
   try {
-    const orFilters: any[] = [
-      ['mobile_no', 'like', '%' + digits],
-    ]
-    // If number had a leading 0, also match without it (handles local→international)
-    if (withoutTrunk !== digits) {
-      orFilters.push(['mobile_no', 'like', '%' + withoutTrunk])
-    }
-
-    const results = await call('frappe.client.get_list', {
-      doctype: 'Customer',
-      or_filters: orFilters,
-      fields: ['name', 'customer_name', 'loyalty_program'],
-      limit_page_length: 1,
+    // Use backend search_customers API which normalizes phone numbers
+    // (matches last 9 digits regardless of country code format)
+    const results = await call('posify.api.customers.search_customers', {
+      search_term: digits,
+      pos_profile: sessionStore.posProfile,
     })
 
     if (results && results.length > 0) {
