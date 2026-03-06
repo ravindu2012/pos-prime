@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useCurrency } from '@/composables/useCurrency'
-import { Printer, RotateCcw, FileText } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { Printer, RotateCcw, FileText, Mail } from 'lucide-vue-next'
+import EmailReceiptDialog from '@/components/receipt/EmailReceiptDialog.vue'
 import type { POSInvoice } from '@/types'
 
 const props = defineProps<{
@@ -21,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const { formatCurrency } = useCurrency()
+const showEmailDialog = ref(false)
 
 function canReturn() {
   return props.order && props.order.docstatus === 1 && !props.order.is_return
@@ -54,6 +57,13 @@ function canReturn() {
             >
               <Printer :size="12" />
               Print
+            </button>
+            <button
+              @click="showEmailDialog = true"
+              class="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
+            >
+              <Mail :size="12" />
+              Email
             </button>
             <button
               v-if="canReturn()"
@@ -260,5 +270,13 @@ function canReturn() {
         </div>
       </div>
     </template>
+
+    <!-- Email Receipt Dialog -->
+    <EmailReceiptDialog
+      v-if="showEmailDialog && order"
+      :invoice-name="order.name"
+      :default-email="order.contact_email || ''"
+      @close="showEmailDialog = false"
+    />
   </div>
 </template>
