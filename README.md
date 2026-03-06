@@ -85,6 +85,11 @@ Dedicated customer-facing display showing live cart items and totals. Supports b
 
 ![Customer Pole Display](screenshots/customer-pole-display.png)
 
+### Denomination Calculator
+Cash counting made easy - count notes and coins by denomination and auto-populate the amount field. Available on both Open Shift and Close Shift screens.
+
+![Denomination Calculator](screenshots/denomination-calculator.png)
+
 ### Customer Display - Welcome Screen
 Customer display with phone number entry for loyalty point lookup.
 
@@ -110,6 +115,7 @@ Customer display with phone number entry for loyalty point lookup.
 - Hold and resume orders (with delete confirmation)
 - Auto-fetch serial numbers (FIFO)
 - Product Bundle support with computed stock availability
+- Cash denomination calculator for opening/closing shifts (21 currencies supported)
 - Dark/Light mode follows ERPNext user theme preference
 - Favicon and app logo from Website Settings
 
