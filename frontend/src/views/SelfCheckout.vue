@@ -52,7 +52,7 @@ const matchedLoyaltyPoints = ref(0)
 const { isFullscreen, isLocked, enterFullscreen, resetIdleTimer } = useKioskMode({
   idleTimeout: 120_000,
   onIdleTimeout: () => {
-    if (step.value !== 'welcome' && step.value !== 'processing' && step.value !== 'phone_entry') {
+    if (step.value !== 'welcome' && step.value !== 'processing') {
       resetToWelcome()
     }
   },
@@ -286,10 +286,6 @@ function skipPhoneEntry() {
   step.value = 'scanning'
 }
 
-function continueAfterPhone() {
-  step.value = 'scanning'
-}
-
 function goToCartReview() {
   step.value = 'cart_review'
 }
@@ -326,7 +322,7 @@ async function payByCash() {
 async function payByCard() {
   step.value = 'processing'
   paymentError.value = null
-  const amount = cartStore.roundedTotal || cartStore.grandTotal
+  const amount = cartStore.roundedTotal ?? cartStore.grandTotal
   const currency = settingsStore.currency || 'USD'
 
   const result = await terminal.collectPayment(amount, currency)
@@ -374,7 +370,7 @@ function cancelProcessing() {
 }
 
 async function submitInvoice(paymentMethod: string) {
-  const amount = cartStore.roundedTotal || cartStore.grandTotal
+  const amount = cartStore.roundedTotal ?? cartStore.grandTotal
   const customerName = customerStore.customer?.name || settingsStore.posProfile?.customer || ''
 
   await paymentStore.submitInvoice({
@@ -439,6 +435,7 @@ function resetToWelcome() {
   matchedCustomerName.value = null
   matchedLoyaltyPoints.value = 0
   phoneLookupError.value = null
+  paymentError.value = null
   if (settingsStore.posProfile?.customer) {
     customerStore.setCustomer(settingsStore.posProfile.customer)
   }
