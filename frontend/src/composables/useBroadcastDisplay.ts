@@ -59,7 +59,7 @@ export type DisplayMessage =
   | { type: 'customer_mobile'; payload: CustomerMobilePayload }
   | { type: 'customer_result'; payload: CustomerResultPayload }
 
-const CHANNEL_PREFIX = 'posify-display'
+const CHANNEL_PREFIX = 'pos-prime-display'
 
 export function useBroadcastDisplay(channelId?: string) {
   const channelName = channelId ? `${CHANNEL_PREFIX}-${channelId}` : CHANNEL_PREFIX

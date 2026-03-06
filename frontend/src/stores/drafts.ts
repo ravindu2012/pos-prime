@@ -31,7 +31,7 @@ export const useDraftsStore = defineStore('drafts', () => {
   async function fetchDrafts(posProfile: string) {
     loading.value = true
     try {
-      const data = await call('posify.api.drafts.get_draft_invoices', {
+      const data = await call('pos_prime.api.drafts.get_draft_invoices', {
         pos_profile: posProfile,
       })
       drafts.value = data || []
@@ -50,7 +50,7 @@ export const useDraftsStore = defineStore('drafts', () => {
   }) {
     loading.value = true
     try {
-      const data = await call('posify.api.drafts.save_draft_invoice', args)
+      const data = await call('pos_prime.api.drafts.save_draft_invoice', args)
       return data
     } finally {
       loading.value = false
@@ -60,7 +60,7 @@ export const useDraftsStore = defineStore('drafts', () => {
   async function loadDraft(invoiceName: string) {
     loading.value = true
     try {
-      const data = await call('posify.api.drafts.load_draft_invoice', {
+      const data = await call('pos_prime.api.drafts.load_draft_invoice', {
         invoice_name: invoiceName,
       })
       activeDraftName.value = invoiceName
@@ -72,7 +72,7 @@ export const useDraftsStore = defineStore('drafts', () => {
 
   async function deleteDraft(invoiceName: string) {
     try {
-      await call('posify.api.drafts.delete_draft_invoice', {
+      await call('pos_prime.api.drafts.delete_draft_invoice', {
         invoice_name: invoiceName,
       })
       drafts.value = drafts.value.filter((d) => d.name !== invoiceName)
@@ -96,7 +96,7 @@ export const useDraftsStore = defineStore('drafts', () => {
   }) {
     loading.value = true
     try {
-      const data = await call('posify.api.drafts.update_and_submit_draft', args)
+      const data = await call('pos_prime.api.drafts.update_and_submit_draft', args)
       activeDraftName.value = null
       return data
     } finally {

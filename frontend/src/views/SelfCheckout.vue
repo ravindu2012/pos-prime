@@ -117,7 +117,7 @@ async function initializeSession() {
       if (openEntries && openEntries.length > 0) {
         sessionName = openEntries[0].name
       } else {
-        initError.value = 'No open POS session found. Open a POS session first via Posify, then launch the kiosk.'
+        initError.value = 'No open POS session found. Open a POS session first via POS Prime, then launch the kiosk.'
         initializing.value = false
         return
       }
@@ -130,7 +130,7 @@ async function initializeSession() {
 
   try {
     // Fetch POS Opening Entry via backend endpoint (no direct doctype permission needed)
-    const entry = await call('posify.api.pos_session.get_opening_entry_detail', {
+    const entry = await call('pos_prime.api.pos_session.get_opening_entry_detail', {
       entry_name: sessionName,
     })
 
@@ -152,7 +152,7 @@ async function initializeSession() {
     // Load company info via branding endpoint (no Company doctype permission needed)
     companyName.value = entry.company
     try {
-      const branding = await call('posify.api.pos_session.get_branding', {
+      const branding = await call('pos_prime.api.pos_session.get_branding', {
         company: entry.company,
       })
       companyLogo.value = branding?.company_logo || ''
@@ -232,7 +232,7 @@ async function lookupPhone(phone: string) {
   try {
     // Use backend search_customers API which normalizes phone numbers
     // (matches last 9 digits regardless of country code format)
-    const results = await call('posify.api.customers.search_customers', {
+    const results = await call('pos_prime.api.customers.search_customers', {
       search_term: digits,
       pos_profile: sessionStore.posProfile,
     })

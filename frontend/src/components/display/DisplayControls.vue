@@ -17,8 +17,8 @@ const baudOptions = [9600, 19200, 38400]
 function openCustomerDisplay() {
   const sessionParam = sessionStore.openingEntry ? `?session=${encodeURIComponent(sessionStore.openingEntry)}` : ''
   window.open(
-    `/posify/display${sessionParam}`,
-    `PosifyDisplay-${sessionStore.openingEntry || 'default'}`,
+    `/pos-prime/display${sessionParam}`,
+    `POSPrimeDisplay-${sessionStore.openingEntry || 'default'}`,
     'popup,width=800,height=600'
   )
 }

@@ -38,7 +38,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
   async function loadRecentCustomers(posProfile: string = '') {
     listLoading.value = true
     try {
-      const data = await call('posify.api.customers.get_recent_customers', {
+      const data = await call('pos_prime.api.customers.get_recent_customers', {
         pos_profile: posProfile,
         limit: 20,
       })
@@ -58,7 +58,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
     }
     listLoading.value = true
     try {
-      const data = await call('posify.api.customers.search_customers', {
+      const data = await call('pos_prime.api.customers.search_customers', {
         search_term: term,
         pos_profile: posProfile,
       })
@@ -74,11 +74,11 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
     detailLoading.value = true
     try {
       const [doc, addrData, contactData, invoiceData, outstandingData] = await Promise.all([
-        call('posify.api.customers.get_customer', { customer_name: customerName }),
-        call('posify.api.addresses.get_customer_addresses', { customer: customerName }).catch(() => []),
-        call('posify.api.addresses.get_customer_contacts', { customer: customerName }).catch(() => []),
-        call('posify.api.customer_profile.get_customer_pos_invoices', { customer: customerName, company }).catch(() => []),
-        call('posify.api.customer_profile.get_customer_outstanding', { customer: customerName, company }).catch(() => ({ outstanding: 0, credit_limit: 0 })),
+        call('pos_prime.api.customers.get_customer', { customer_name: customerName }),
+        call('pos_prime.api.addresses.get_customer_addresses', { customer: customerName }).catch(() => []),
+        call('pos_prime.api.addresses.get_customer_contacts', { customer: customerName }).catch(() => []),
+        call('pos_prime.api.customer_profile.get_customer_pos_invoices', { customer: customerName, company }).catch(() => []),
+        call('pos_prime.api.customer_profile.get_customer_outstanding', { customer: customerName, company }).catch(() => ({ outstanding: 0, credit_limit: 0 })),
       ])
 
       selectedCustomer.value = {
@@ -102,7 +102,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
       loyaltyData.value = null
       if (doc.loyalty_program) {
         try {
-          const loyalty = await call('posify.api.loyalty.get_customer_loyalty', { customer: customerName })
+          const loyalty = await call('pos_prime.api.loyalty.get_customer_loyalty', { customer: customerName })
           if (loyalty) {
             loyaltyData.value = loyalty
             selectedCustomer.value!.loyalty_points = loyalty.loyalty_points

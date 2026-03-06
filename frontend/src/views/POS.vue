@@ -53,7 +53,7 @@ useKeyboardShortcuts({
     else if (paymentStore.showPaymentDialog) paymentStore.closePaymentDialog()
     else if (showHeldOrders.value) showHeldOrders.value = false
   },
-  onOpenOrders: () => router.push('/posify/orders'),
+  onOpenOrders: () => router.push('/pos-prime/orders'),
   onNewOrder: () => startNewOrder(),
 })
 
@@ -65,7 +65,7 @@ async function sendInitToDisplay() {
   let logo: string | null = null
   if (sessionStore.company) {
     try {
-      const branding = await call('posify.api.pos_session.get_branding', {
+      const branding = await call('pos_prime.api.pos_session.get_branding', {
         company: sessionStore.company,
       })
       if (branding?.company_logo) logo = branding.company_logo
@@ -137,7 +137,7 @@ onMounted(async () => {
   try {
     await sessionStore.checkOpeningEntry()
     if (!sessionStore.hasOpenShift) {
-      router.replace('/posify/open')
+      router.replace('/pos-prime/open')
       return
     }
     await settingsStore.loadPOSProfile(sessionStore.posProfile)

@@ -24,7 +24,7 @@ async function sendEmail() {
   }
   sending.value = true
   try {
-    await call('posify.api.orders.email_invoice', {
+    await call('pos_prime.api.orders.email_invoice', {
       invoice_name: props.invoiceName,
       recipient: email.value.trim(),
       content: message.value.trim(),

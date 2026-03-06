@@ -29,7 +29,7 @@ const error = ref('')
 
 onMounted(async () => {
   if (!sessionStore.hasOpenShift) {
-    router.replace('/posify/open')
+    router.replace('/pos-prime/open')
     return
   }
   await loadSummary()
@@ -38,7 +38,7 @@ onMounted(async () => {
 async function loadSummary() {
   loadingSummary.value = true
   try {
-    const data = await call('posify.api.pos_session.get_shift_summary', {
+    const data = await call('pos_prime.api.pos_session.get_shift_summary', {
       opening_entry: sessionStore.openingEntry,
     })
     grandTotal.value = data.grand_total || 0
@@ -81,7 +81,7 @@ async function handleCloseShift() {
         closing_amount: ps.closing_amount,
       }))
     )
-    router.replace('/posify/open')
+    router.replace('/pos-prime/open')
   } catch (e: any) {
     error.value = e.messages?.[0] || e.message || 'Failed to close shift'
   } finally {
@@ -190,7 +190,7 @@ async function handleCloseShift() {
 
         <div class="flex gap-3">
           <button
-            @click="router.push('/posify')"
+            @click="router.push('/pos-prime')"
             class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             Cancel

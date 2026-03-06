@@ -20,7 +20,7 @@ const error = ref('')
 onMounted(async () => {
   const data = await settingsStore.fetchPOSProfiles()
   if (data?.openEntry) {
-    router.replace('/posify')
+    router.replace('/pos-prime')
     return
   }
   if (settingsStore.posProfiles.length === 1) {
@@ -78,7 +78,7 @@ async function openShift() {
       balance_details: openingBalances.value,
     })
     await settingsStore.loadPOSProfile(selectedProfile.value)
-    router.replace('/posify')
+    router.replace('/pos-prime')
   } catch (e: any) {
     error.value = e.messages?.[0] || e.message || 'Failed to open shift'
   } finally {

@@ -34,13 +34,13 @@ const userFullName = ref('')
 const userImage = ref<string | null>(null)
 
 const navItems = [
-  { name: 'POS', path: '/posify', icon: Grid3x3 },
-  { name: 'Orders', path: '/posify/orders', icon: ClipboardList },
-  { name: 'Customers', path: '/posify/customers', icon: Users },
+  { name: 'POS', path: '/pos-prime', icon: Grid3x3 },
+  { name: 'Orders', path: '/pos-prime/orders', icon: ClipboardList },
+  { name: 'Customers', path: '/pos-prime/customers', icon: Users },
 ]
 
 const currentPath = computed(() => {
-  if (route.path.startsWith('/posify/customers')) return '/posify/customers'
+  if (route.path.startsWith('/pos-prime/customers')) return '/pos-prime/customers'
   return route.path
 })
 const draftCount = computed(() => draftsStore.drafts.length)
@@ -73,7 +73,7 @@ onMounted(async () => {
 
   // Fetch app logo & favicon via backend endpoint (no Website Settings permission needed)
   try {
-    const branding = await call('posify.api.pos_session.get_branding', {
+    const branding = await call('pos_prime.api.pos_session.get_branding', {
       company: sessionStore.company || '',
     })
     if (branding?.app_logo) {
@@ -97,7 +97,7 @@ onMounted(async () => {
   // Fetch user info via backend endpoint (no User doctype permission needed)
   if (userSession.user?.data) {
     try {
-      const userInfo = await call('posify.api.pos_session.get_user_info')
+      const userInfo = await call('pos_prime.api.pos_session.get_user_info')
       if (userInfo) {
         userFullName.value = userInfo.full_name || userSession.user.data
         userImage.value = userInfo.user_image || null
@@ -114,7 +114,7 @@ function navigate(path: string) {
 }
 
 function closeShift() {
-  router.push('/posify/close')
+  router.push('/pos-prime/close')
   sidebarOpen.value = false
 }
 
@@ -291,7 +291,7 @@ const emit = defineEmits<{
           <div v-else class="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
             <span class="text-white font-bold text-[10px]">{{ companyAbbr }}</span>
           </div>
-          <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">{{ sessionStore.company || 'Posify' }}</span>
+          <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">{{ sessionStore.company || 'POS Prime' }}</span>
         </button>
         <div class="flex items-center gap-1">
           <button

@@ -71,12 +71,12 @@ async function processReturn() {
   loading.value = true
   try {
     // Create the return invoice
-    const returnDoc = await call('posify.api.orders.create_return_invoice', {
+    const returnDoc = await call('pos_prime.api.orders.create_return_invoice', {
       source_invoice: props.order.name,
     })
 
     // Submit with adjusted quantities
-    const result = await call('posify.api.orders.submit_return_invoice', {
+    const result = await call('pos_prime.api.orders.submit_return_invoice', {
       invoice_name: returnDoc.name,
       items: returnItems.value
         .filter((item) => item.return_qty > 0)

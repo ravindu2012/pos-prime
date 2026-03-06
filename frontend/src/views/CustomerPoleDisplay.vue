@@ -87,7 +87,7 @@ async function submitMobile() {
   if (!mobile) return
   mobileStatus.value = 'searching'
   try {
-    const results = await call('posify.api.customers.search_customers', {
+    const results = await call('pos_prime.api.customers.search_customers', {
       search_term: mobile,
       pos_profile: '',
     })

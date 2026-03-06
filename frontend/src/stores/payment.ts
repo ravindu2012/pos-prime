@@ -93,7 +93,7 @@ export const usePaymentStore = defineStore('payment', () => {
   } & Partial<InvoiceOptions>) {
     submitting.value = true
     try {
-      const data = await call('posify.api.invoices.create_pos_invoice', args)
+      const data = await call('pos_prime.api.invoices.create_pos_invoice', args)
       lastInvoice.value = data
       return data
     } catch (e) {

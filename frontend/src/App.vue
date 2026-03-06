@@ -10,10 +10,10 @@ onMounted(async () => {
   try {
     await session.user.reload()
     if (!session.isLoggedIn) {
-      window.location.href = '/login?redirect-to=/posify'
+      window.location.href = '/login?redirect-to=/pos-prime'
     }
   } catch {
-    window.location.href = '/login?redirect-to=/posify'
+    window.location.href = '/login?redirect-to=/pos-prime'
   }
 })
 </script>

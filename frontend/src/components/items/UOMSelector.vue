@@ -17,7 +17,7 @@ const loading = ref(false)
 onMounted(async () => {
   loading.value = true
   try {
-    const data = await call('posify.api.stock.get_item_uoms', {
+    const data = await call('pos_prime.api.stock.get_item_uoms', {
       item_code: props.itemCode,
     })
     uoms.value = data || []

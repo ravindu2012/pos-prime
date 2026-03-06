@@ -26,9 +26,9 @@ function injectFrappeContext(): Plugin {
 
       // Inject title + favicon from Website Settings
       html = html.replace(
-        '<title>Posify</title>',
+        '<title>POS Prime</title>',
         [
-          '<title>{{ ws.app_name or "Posify" }}</title>',
+          '<title>{{ ws.app_name or "POS Prime" }}</title>',
           '  {% if ws.favicon %}<link rel="icon" href="{{ ws.favicon }}">{% endif %}',
         ].join('\n  ')
       )
@@ -65,7 +65,7 @@ export default defineConfig({
       buildConfig: {
         indexHtmlPath: path.resolve(
           __dirname,
-          '../posify/www/posify.html'
+          '../pos_prime/www/pos_prime.html'
         ),
       },
     }),
