@@ -116,9 +116,14 @@ def create_opening_entry(pos_profile, company, balance_details):
 
 @frappe.whitelist()
 def get_pos_profile(pos_profile):
-    """Get full POS Profile document."""
+    """Get full POS Profile document with company default currency."""
     doc = frappe.get_doc("POS Profile", pos_profile)
-    return doc.as_dict()
+    result = doc.as_dict()
+    if not result.get("currency") and result.get("company"):
+        result["currency"] = frappe.db.get_value(
+            "Company", result["company"], "default_currency"
+        )
+    return result
 
 
 @frappe.whitelist()
