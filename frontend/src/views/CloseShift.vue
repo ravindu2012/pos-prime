@@ -2,13 +2,34 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePosSessionStore } from '@/stores/posSession'
+import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
 import { call } from 'frappe-ui'
-import { LogOut } from 'lucide-vue-next'
+import { LogOut, Calculator } from 'lucide-vue-next'
+import DenominationCalculator from '@/components/shift/DenominationCalculator.vue'
 
 const router = useRouter()
 const sessionStore = usePosSessionStore()
+const settingsStore = useSettingsStore()
 const { formatCurrency } = useCurrency()
+
+const denomCalcIndex = ref(-1)
+const showDenomCalc = ref(false)
+
+function isCash(mode: string): boolean {
+  return mode.toLowerCase().includes('cash')
+}
+
+function openDenomCalc(index: number) {
+  denomCalcIndex.value = index
+  showDenomCalc.value = true
+}
+
+function onDenomApply(value: number) {
+  if (denomCalcIndex.value >= 0) {
+    paymentSummary.value[denomCalcIndex.value].closing_amount = value
+  }
+}
 
 interface PaymentSummary {
   mode_of_payment: string
@@ -168,13 +189,23 @@ async function handleCloseShift() {
                   <td class="px-3 py-2 text-right text-gray-500 dark:text-gray-400">{{ formatCurrency(ps.opening_amount) }}</td>
                   <td class="px-3 py-2 text-right text-gray-700 dark:text-gray-300 font-medium">{{ formatCurrency(ps.expected_amount) }}</td>
                   <td class="px-3 py-2 text-right">
-                    <input
-                      v-model.number="paymentSummary[index].closing_amount"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      class="w-28 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
+                    <div class="flex items-center justify-end gap-1">
+                      <input
+                        v-model.number="paymentSummary[index].closing_amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        class="w-28 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      />
+                      <button
+                        v-if="isCash(ps.mode_of_payment)"
+                        @click="openDenomCalc(index)"
+                        class="p-1 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                        title="Denomination calculator"
+                      >
+                        <Calculator :size="16" />
+                      </button>
+                    </div>
                   </td>
                   <td
                     class="px-3 py-2 text-right font-medium"
@@ -205,5 +236,12 @@ async function handleCloseShift() {
         </div>
       </div>
     </div>
+
+    <DenominationCalculator
+      :modelValue="denomCalcIndex >= 0 ? paymentSummary[denomCalcIndex]?.closing_amount ?? 0 : 0"
+      @update:modelValue="onDenomApply"
+      :currency="settingsStore.currency"
+      v-model:show="showDenomCalc"
+    />
   </div>
 </template>

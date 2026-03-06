@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
-import { LogIn } from 'lucide-vue-next'
+import { LogIn, Calculator } from 'lucide-vue-next'
+import DenominationCalculator from '@/components/shift/DenominationCalculator.vue'
 
 const router = useRouter()
 const sessionStore = usePosSessionStore()
@@ -16,6 +17,23 @@ const company = ref('')
 const openingBalances = ref<{ mode_of_payment: string; opening_amount: number }[]>([])
 const loading = ref(false)
 const error = ref('')
+const denomCalcIndex = ref(-1)
+const showDenomCalc = ref(false)
+
+function isCash(mode: string): boolean {
+  return mode.toLowerCase().includes('cash')
+}
+
+function openDenomCalc(index: number) {
+  denomCalcIndex.value = index
+  showDenomCalc.value = true
+}
+
+function onDenomApply(value: number) {
+  if (denomCalcIndex.value >= 0) {
+    openingBalances.value[denomCalcIndex.value].opening_amount = value
+  }
+}
 
 onMounted(async () => {
   const data = await settingsStore.fetchPOSProfiles()
@@ -158,6 +176,14 @@ async function openShift() {
                 class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="0.00"
               />
+              <button
+                v-if="isCash(balance.mode_of_payment)"
+                @click="openDenomCalc(index)"
+                class="p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                title="Denomination calculator"
+              >
+                <Calculator :size="18" />
+              </button>
             </div>
           </div>
         </div>
@@ -171,5 +197,12 @@ async function openShift() {
         </button>
       </div>
     </div>
+
+    <DenominationCalculator
+      :modelValue="denomCalcIndex >= 0 ? openingBalances[denomCalcIndex]?.opening_amount ?? 0 : 0"
+      @update:modelValue="onDenomApply"
+      :currency="settingsStore.currency"
+      v-model:show="showDenomCalc"
+    />
   </div>
 </template>
