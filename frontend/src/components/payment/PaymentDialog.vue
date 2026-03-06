@@ -487,8 +487,8 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 @keyframes slide-up {
-  from { transform: trangrayY(100%); opacity: 0; }
-  to { transform: trangrayY(0); opacity: 1; }
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 @keyframes scale-in {
   from { transform: scale(0.95); opacity: 0; }

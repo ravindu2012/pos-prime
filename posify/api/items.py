@@ -1,4 +1,5 @@
 import frappe
+from posify.api._utils import get_product_bundle_items, get_bundle_availability, validate_pos_access
 
 
 @frappe.whitelist()
@@ -16,6 +17,7 @@ def get_items(
     only items with stock > 0 in the warehouse are returned — filtered
     server-side so pagination works correctly.
     """
+    validate_pos_access(pos_profile or None)
     start = int(start)
     page_length = int(page_length)
 
@@ -184,15 +186,30 @@ def get_items(
         )
         reserved = {r.item_code: r.qty or 0 for r in reserved_data}
 
+    # ── Detect Product Bundles ────────────────────────────────────────
+    bundle_set = set()
+    bundle_rows = frappe.get_all(
+        "Product Bundle",
+        filters={"disabled": 0, "new_item_code": ["in", item_codes]},
+        fields=["new_item_code"],
+    )
+    bundle_set = {b.new_item_code for b in bundle_rows}
+
     # ── Assemble response ────────────────────────────────────────────
     currency = frappe.defaults.get_defaults().get("currency", "USD")
     for item in items:
         item["rate"] = prices.get(item.item_code, 0)
         item["currency"] = currency
-        actual = stock.get(item.item_code, 0)
-        item["actual_qty"] = max(actual - reserved.get(item.item_code, 0), 0)
         item["barcode"] = barcodes.get(item.item_code)
         item["item_tax_template"] = tax_templates.get(item.item_code)
+
+        if item.item_code in bundle_set:
+            item["is_product_bundle"] = True
+            item["actual_qty"] = get_bundle_availability(item.item_code, warehouse) if warehouse else 0
+        else:
+            item["is_product_bundle"] = False
+            actual = stock.get(item.item_code, 0)
+            item["actual_qty"] = max(actual - reserved.get(item.item_code, 0), 0)
 
     return {"items": items}
 
@@ -214,6 +231,7 @@ def _get_group_and_children(item_group):
 @frappe.whitelist()
 def get_item_tax_templates(company=""):
     """Get available Item Tax Templates, optionally filtered by company."""
+    validate_pos_access()
     filters = {}
     if company:
         filters["company"] = company
@@ -232,6 +250,7 @@ def get_item_tax_templates(company=""):
 def search_barcode(search_value, pos_profile=""):
     """Search for an item by barcode, item code, serial number, or batch number.
     Returns item details including rate from the POS Profile's price list."""
+    validate_pos_access(pos_profile or None)
 
     result = None
 
@@ -359,12 +378,21 @@ def search_barcode(search_value, pos_profile=""):
     else:
         result["actual_qty"] = 0
 
+    # Check if this item is a Product Bundle
+    if get_product_bundle_items(result["item_code"]):
+        result["is_product_bundle"] = True
+        if warehouse:
+            result["actual_qty"] = get_bundle_availability(result["item_code"], warehouse)
+    else:
+        result["is_product_bundle"] = False
+
     return result
 
 
 @frappe.whitelist()
 def get_item_groups(pos_profile=""):
     """Get item groups, filtered by POS Profile if provided."""
+    validate_pos_access(pos_profile or None)
     if pos_profile:
         profile = frappe.get_doc("POS Profile", pos_profile)
         if profile.item_groups:

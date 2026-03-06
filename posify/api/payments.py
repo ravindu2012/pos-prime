@@ -1,11 +1,11 @@
 import frappe
+from posify.api._utils import validate_pos_access
 
 
 @frappe.whitelist()
 def get_payment_methods(pos_profile):
     """Get allowed payment methods for a POS Profile."""
-    if not frappe.db.exists("POS Profile", pos_profile):
-        frappe.throw(f"POS Profile '{pos_profile}' does not exist")
+    validate_pos_access(pos_profile)
     profile = frappe.get_doc("POS Profile", pos_profile)
     methods = []
     for pm in profile.payments:

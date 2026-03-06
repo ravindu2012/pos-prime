@@ -7,6 +7,7 @@ from posify.api._utils import (
     format_invoice_response,
     validate_pos_access,
     safe_float,
+    set_campaign_from_profile,
 )
 
 
@@ -118,6 +119,7 @@ def get_order_detail(invoice_name):
 @frappe.whitelist()
 def create_return_invoice(source_invoice):
     """Create a return POS Invoice from an existing one using ERPNext's built-in method."""
+    validate_pos_access()
     try:
         if not frappe.db.exists("POS Invoice", source_invoice):
             frappe.throw(_("Source invoice {0} does not exist").format(source_invoice))
@@ -162,6 +164,7 @@ def create_return_invoice(source_invoice):
 @frappe.whitelist()
 def submit_return_invoice(invoice_name, items, payments):
     """Adjust return items and submit."""
+    validate_pos_access()
     try:
         if isinstance(items, str):
             items = json.loads(items)
@@ -179,10 +182,12 @@ def submit_return_invoice(invoice_name, items, payments):
         if not items:
             frappe.throw(_("Items cannot be empty for return submission"))
 
-        # Update items with adjusted return quantities
-        for i, item_data in enumerate(items):
-            if i < len(invoice.items):
-                invoice.items[i].qty = item_data.get("qty", invoice.items[i].qty)
+        # Update items with adjusted return quantities (match by item_code, not position)
+        items_by_code = {item_data.get("item_code"): item_data for item_data in items}
+        for inv_item in invoice.items:
+            matched = items_by_code.get(inv_item.item_code)
+            if matched:
+                inv_item.qty = matched.get("qty", inv_item.qty)
 
         # Remove items with 0 qty
         invoice.items = [item for item in invoice.items if item.qty != 0]
@@ -205,7 +210,6 @@ def submit_return_invoice(invoice_name, items, payments):
             )
 
         invoice.paid_amount = total_paid
-        invoice.base_paid_amount = total_paid
 
         invoice.save(ignore_permissions=True)
         invoice.submit()
@@ -216,6 +220,44 @@ def submit_return_invoice(invoice_name, items, payments):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Posify: submit_return_invoice failed")
         frappe.throw(_("Failed to submit return invoice: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def email_invoice(invoice_name, recipient, content=""):
+    """Email a POS Invoice receipt as PDF to the given recipient."""
+    if not frappe.has_permission("POS Invoice", "read", invoice_name):
+        frappe.throw(
+            _("You do not have permission to view this invoice."),
+            frappe.PermissionError,
+        )
+
+    if not recipient or not recipient.strip():
+        frappe.throw(_("Recipient email is required"))
+
+    invoice = frappe.get_doc("POS Invoice", invoice_name)
+
+    # Determine print format from POS Profile or fallback
+    print_format = None
+    if invoice.pos_profile:
+        print_format = frappe.db.get_value("POS Profile", invoice.pos_profile, "print_format")
+    if not print_format:
+        print_format = frappe.db.get_single_value("Print Settings", "print_format") or "Standard"
+
+    subject = _("Invoice {0}").format(invoice_name)
+    message = content.strip() if content and content.strip() else _("Please find your invoice attached.")
+
+    attachments = [frappe.attach_print("POS Invoice", invoice_name, print_format=print_format)]
+
+    frappe.sendmail(
+        recipients=[recipient.strip()],
+        subject=subject,
+        message=message,
+        reference_doctype="POS Invoice",
+        reference_name=invoice_name,
+        attachments=attachments,
+    )
+
+    return {"success": True, "message": _("Email sent to {0}").format(recipient.strip())}
 
 
 @frappe.whitelist()
@@ -262,6 +304,9 @@ def create_manual_return(customer, pos_profile, items, mode_of_payment):
         if profile.tax_category:
             invoice.tax_category = profile.tax_category
 
+        # Campaign from profile (v14/v15: campaign, v16: utm_campaign)
+        set_campaign_from_profile(invoice, profile)
+
         # Add items with negative qty
         for item_data in items:
             item_dict = build_item_dict(item_data, profile)
@@ -279,7 +324,6 @@ def create_manual_return(customer, pos_profile, items, mode_of_payment):
             "amount": -abs(return_total),
         })
         invoice.paid_amount = -abs(return_total)
-        invoice.base_paid_amount = -abs(return_total)
 
         invoice.flags.ignore_permissions = True
         invoice.set_missing_values()

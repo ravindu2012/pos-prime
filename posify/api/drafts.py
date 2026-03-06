@@ -8,6 +8,9 @@ from posify.api._utils import (
     format_invoice_response,
     validate_pos_access,
     safe_float,
+    get_product_bundle_items,
+    validate_bundle_stock,
+    set_campaign_from_profile,
 )
 
 
@@ -90,6 +93,7 @@ def save_draft_invoice(
             "write_off_account": profile.write_off_account,
             "write_off_cost_center": profile.write_off_cost_center,
             "ignore_pricing_rule": 1 if profile.ignore_pricing_rule else 0,
+            "disable_rounded_total": 1 if profile.disable_rounded_total else 0,
         }
     )
 
@@ -121,9 +125,8 @@ def save_draft_invoice(
     if profile.tax_category:
         invoice.tax_category = profile.tax_category
 
-    # Campaign from profile
-    if profile.campaign:
-        invoice.campaign = profile.campaign
+    # Campaign from profile (v14/v15: campaign, v16: utm_campaign)
+    set_campaign_from_profile(invoice, profile)
 
     # Discounts
     if additional_discount_percentage:
@@ -207,11 +210,20 @@ def get_draft_invoices(pos_profile):
         order_by="creation desc",
     )
 
-    # Add item count for each draft
-    for draft in drafts:
-        draft["item_count"] = frappe.db.count(
-            "POS Invoice Item", {"parent": draft.name}
+    # Batch fetch item counts in a single query instead of per-draft
+    if drafts:
+        draft_names = [d.name for d in drafts]
+        item_counts = frappe.db.sql(
+            """SELECT parent, COUNT(*) as cnt
+               FROM `tabPOS Invoice Item`
+               WHERE parent IN %(names)s
+               GROUP BY parent""",
+            {"names": draft_names},
+            as_dict=True,
         )
+        count_map = {r.parent: r.cnt for r in item_counts}
+        for draft in drafts:
+            draft["item_count"] = count_map.get(draft.name, 0)
 
     return drafts
 
@@ -308,6 +320,7 @@ def update_and_submit_draft(
     sales_team=None,
 ):
     """Update a draft invoice with all fields and submit it."""
+    validate_pos_access()
     if isinstance(items, str):
         items = json.loads(items)
     if isinstance(payments, str):
@@ -352,7 +365,6 @@ def update_and_submit_draft(
         )
 
     invoice.paid_amount = total_paid
-    invoice.base_paid_amount = total_paid
 
     # Taxes
     if taxes:
@@ -412,6 +424,36 @@ def update_and_submit_draft(
         debit_to=debit_to,
         sales_team=sales_team,
     )
+
+    # Apply disable_rounded_total from profile
+    if profile.disable_rounded_total:
+        invoice.disable_rounded_total = 1
+
+    # Validate stock availability before submission
+    if profile.validate_stock_on_save:
+        for item_data in items:
+            item_code = item_data.get("item_code")
+            qty = safe_float(item_data.get("qty", 1))
+            item_warehouse = item_data.get("warehouse") or profile.warehouse
+
+            # Product Bundle: validate component stock instead
+            bundle_components = get_product_bundle_items(item_code)
+            if bundle_components:
+                validate_bundle_stock(item_code, qty, item_warehouse)
+                continue
+
+            is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item")
+            if not is_stock_item:
+                continue
+            actual_qty = frappe.db.get_value(
+                "Bin", {"item_code": item_code, "warehouse": item_warehouse}, "actual_qty"
+            ) or 0
+            if qty > actual_qty:
+                frappe.throw(
+                    _("{0}: Insufficient stock. Available: {1}, Requested: {2}").format(
+                        item_code, actual_qty, qty
+                    )
+                )
 
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()

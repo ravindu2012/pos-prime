@@ -8,6 +8,9 @@ from posify.api._utils import (
     format_invoice_response,
     validate_pos_access,
     safe_float,
+    get_product_bundle_items,
+    validate_bundle_stock,
+    set_campaign_from_profile,
 )
 
 
@@ -111,6 +114,7 @@ def create_pos_invoice(
             "write_off_cost_center": profile.write_off_cost_center,
             "apply_discount_on": apply_discount_on or profile.apply_discount_on or "Grand Total",
             "ignore_pricing_rule": 1 if profile.ignore_pricing_rule else 0,
+            "disable_rounded_total": 1 if profile.disable_rounded_total else 0,
         }
     )
 
@@ -138,7 +142,6 @@ def create_pos_invoice(
         )
 
     invoice.paid_amount = total_paid
-    invoice.base_paid_amount = total_paid
 
     # Taxes template
     if taxes:
@@ -175,9 +178,8 @@ def create_pos_invoice(
         if return_against:
             invoice.return_against = return_against
 
-    # Campaign from profile
-    if profile.campaign:
-        invoice.campaign = profile.campaign
+    # Campaign from profile (v14/v15: campaign, v16: utm_campaign)
+    set_campaign_from_profile(invoice, profile)
 
     # Set all optional fields (address, contact, currency, commission,
     # document details, posting, naming, shipping, terms, printing,
@@ -216,6 +218,32 @@ def create_pos_invoice(
         debit_to=debit_to,
         sales_team=sales_team,
     )
+
+    # Validate stock availability before submission
+    if profile.validate_stock_on_save:
+        for item_data in items:
+            item_code = item_data.get("item_code")
+            qty = safe_float(item_data.get("qty", 1))
+            item_warehouse = item_data.get("warehouse") or profile.warehouse
+
+            # Product Bundle: validate component stock instead
+            bundle_components = get_product_bundle_items(item_code)
+            if bundle_components:
+                validate_bundle_stock(item_code, qty, item_warehouse)
+                continue
+
+            is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item")
+            if not is_stock_item:
+                continue
+            actual_qty = frappe.db.get_value(
+                "Bin", {"item_code": item_code, "warehouse": item_warehouse}, "actual_qty"
+            ) or 0
+            if qty > actual_qty:
+                frappe.throw(
+                    _("{0}: Insufficient stock. Available: {1}, Requested: {2}").format(
+                        item_code, actual_qty, qty
+                    )
+                )
 
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()

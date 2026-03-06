@@ -1,10 +1,12 @@
 import frappe
 from frappe import _
+from posify.api._utils import validate_pos_access
 
 
 @frappe.whitelist()
 def get_batch_nos(item_code, warehouse):
     """Get available batches for an item in a warehouse with qty and expiry."""
+    validate_pos_access()
     batches = frappe.db.sql(
         """
         SELECT
@@ -33,6 +35,7 @@ def get_batch_nos(item_code, warehouse):
 @frappe.whitelist()
 def get_serial_nos(item_code, warehouse, batch_no=None):
     """Get available serial numbers for an item in a warehouse."""
+    validate_pos_access()
     filters = {
         "item_code": item_code,
         "warehouse": warehouse,
@@ -53,8 +56,40 @@ def get_serial_nos(item_code, warehouse, batch_no=None):
 
 
 @frappe.whitelist()
+def auto_fetch_serial_nos(item_code, warehouse, qty, batch_no=None):
+    """Auto-fetch available serial numbers for an item (FIFO order).
+
+    Returns up to `qty` active serial numbers from the given warehouse,
+    optionally filtered by batch.
+    """
+    validate_pos_access()
+    qty = int(qty)
+    if qty <= 0:
+        return []
+
+    filters = {
+        "item_code": item_code,
+        "warehouse": warehouse,
+        "status": "Active",
+    }
+    if batch_no:
+        filters["batch_no"] = batch_no
+
+    serial_nos = frappe.get_list(
+        "Serial No",
+        filters=filters,
+        fields=["name"],
+        order_by="creation asc",
+        limit_page_length=qty,
+    )
+
+    return [sn.name for sn in serial_nos]
+
+
+@frappe.whitelist()
 def get_item_uoms(item_code):
     """Get available UOMs for an item with conversion factors."""
+    validate_pos_access()
     uoms = frappe.get_all(
         "UOM Conversion Detail",
         filters={"parent": item_code, "parenttype": "Item"},
