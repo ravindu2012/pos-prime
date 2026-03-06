@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { call } from 'frappe-ui'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
@@ -71,6 +71,10 @@ async function searchItems() {
 watch(searchInput, () => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(searchItems, 300)
+})
+
+onUnmounted(() => {
+  clearTimeout(debounceTimer)
 })
 
 function addItem(item: any) {

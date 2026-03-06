@@ -68,6 +68,7 @@ export interface Item {
   weight_uom: string | null
   barcode: string | null
   item_tax_template: string | null
+  is_product_bundle: boolean
 }
 
 export interface CartItem {

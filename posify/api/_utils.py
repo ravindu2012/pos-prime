@@ -7,16 +7,17 @@ def validate_pos_access(pos_profile=None):
     """Validate that the current user has POS access.
 
     Checks:
-    1. User has "Sales User" or "System Manager" role.
+    1. User has read permission on POS Invoice (respects Role Permissions Manager,
+       including custom roles like "POS Operator", "Cashier", etc.).
     2. If pos_profile is provided, user is in the profile's applicable_for_users
        (or the list is empty, meaning all users are allowed).
 
     Raises frappe.PermissionError if not authorized.
     """
-    user_roles = frappe.get_roles()
-    if "Sales User" not in user_roles and "System Manager" not in user_roles:
+    if not frappe.has_permission("POS Invoice", "read"):
         frappe.throw(
-            "You do not have permission to access POS. Required role: Sales User or System Manager.",
+            "You do not have permission to access POS. "
+            "Please contact your administrator to grant POS Invoice access.",
             frappe.PermissionError,
         )
 
@@ -78,10 +79,13 @@ def build_item_dict(item_data, profile):
         item_dict["serial_no"] = item_data["serial_no"]
     if item_data.get("batch_no"):
         item_dict["batch_no"] = item_data["batch_no"]
+    # serial_and_batch_bundle only exists in v15+ (not in v14)
     if item_data.get("serial_and_batch_bundle"):
-        item_dict["serial_and_batch_bundle"] = item_data["serial_and_batch_bundle"]
+        if frappe.get_meta("POS Invoice Item").has_field("serial_and_batch_bundle"):
+            item_dict["serial_and_batch_bundle"] = item_data["serial_and_batch_bundle"]
     if item_data.get("use_serial_batch_fields") is not None:
-        item_dict["use_serial_batch_fields"] = item_data["use_serial_batch_fields"]
+        if frappe.get_meta("POS Invoice Item").has_field("use_serial_batch_fields"):
+            item_dict["use_serial_batch_fields"] = item_data["use_serial_batch_fields"]
 
     # UOM
     if item_data.get("uom"):
@@ -97,9 +101,10 @@ def build_item_dict(item_data, profile):
     if item_data.get("project"):
         item_dict["project"] = item_data["project"]
 
-    # Expense account
-    if item_data.get("expense_account"):
-        item_dict["expense_account"] = item_data["expense_account"]
+    # Expense account (with profile fallback)
+    expense_account = item_data.get("expense_account") or getattr(profile, "expense_account", None)
+    if expense_account:
+        item_dict["expense_account"] = expense_account
 
     # Weight
     if item_data.get("weight_per_unit"):
@@ -139,8 +144,9 @@ def set_invoice_optional_fields(invoice, profile, **kwargs):
         invoice.commission_rate = safe_float(kwargs["commission_rate"])
 
     # Document details
-    if kwargs.get("project"):
-        invoice.project = kwargs["project"]
+    project = kwargs.get("project") or getattr(profile, "project", None)
+    if project:
+        invoice.project = project
     if kwargs.get("cost_center"):
         invoice.cost_center = kwargs["cost_center"]
     if kwargs.get("remarks"):
@@ -203,6 +209,104 @@ def set_invoice_optional_fields(invoice, profile, **kwargs):
     if kwargs.get("sales_team"):
         for member in kwargs["sales_team"]:
             invoice.append("sales_team", member)
+
+
+def set_campaign_from_profile(invoice, profile):
+    """Set campaign field on invoice from POS Profile, handling v14/v15/v16 field rename."""
+    # v16 renamed 'campaign' to 'utm_campaign' on both POS Profile and POS Invoice
+    for field_name in ("utm_campaign", "campaign"):
+        value = profile.get(field_name)
+        if value:
+            if frappe.get_meta("POS Invoice").has_field(field_name):
+                setattr(invoice, field_name, value)
+            break
+
+
+def get_product_bundle_items(item_code):
+    """Get component items for a Product Bundle. Returns [] if not a bundle."""
+    if not frappe.db.exists("Product Bundle", {"new_item_code": item_code, "disabled": 0}):
+        return []
+    return frappe.get_all(
+        "Product Bundle Item",
+        filters={"parent": item_code, "parenttype": "Product Bundle"},
+        fields=["item_code", "qty", "description"],
+        order_by="idx asc",
+    )
+
+
+def validate_bundle_stock(item_code, qty, warehouse):
+    """Validate that all components of a Product Bundle have sufficient stock.
+
+    Raises frappe.ValidationError if any component has insufficient stock.
+    """
+    components = get_product_bundle_items(item_code)
+    if not components:
+        return  # Not a bundle, nothing to validate
+
+    # Batch fetch actual_qty for all components in one query
+    comp_codes = [c.item_code for c in components]
+    bin_data = {
+        r.item_code: r.actual_qty
+        for r in frappe.get_all(
+            "Bin",
+            filters={"item_code": ["in", comp_codes], "warehouse": warehouse},
+            fields=["item_code", "actual_qty"],
+        )
+    }
+
+    for comp in components:
+        required_qty = comp.qty * qty
+        actual_qty = bin_data.get(comp.item_code, 0) or 0
+        if required_qty > actual_qty:
+            frappe.throw(
+                "Product Bundle {0}: Component {1} has insufficient stock. "
+                "Available: {2}, Required: {3}".format(
+                    item_code, comp.item_code, actual_qty, required_qty
+                )
+            )
+
+
+def get_bundle_availability(item_code, warehouse):
+    """Calculate how many complete bundles can be fulfilled from component stock."""
+    components = get_product_bundle_items(item_code)
+    if not components:
+        return 0
+
+    comp_codes = [c.item_code for c in components if c.qty > 0]
+    if not comp_codes:
+        return 0
+
+    # Batch fetch is_stock_item for all components in one query
+    stock_items = {
+        r.name
+        for r in frappe.get_all(
+            "Item",
+            filters={"name": ["in", comp_codes], "is_stock_item": 1},
+            fields=["name"],
+        )
+    }
+
+    # Batch fetch actual_qty for all stock components in one query
+    bin_data = {
+        r.item_code: r.actual_qty
+        for r in frappe.get_all(
+            "Bin",
+            filters={"item_code": ["in", list(stock_items)], "warehouse": warehouse},
+            fields=["item_code", "actual_qty"],
+        )
+    } if stock_items else {}
+
+    min_bundles = float("inf")
+    for comp in components:
+        if comp.qty <= 0:
+            continue
+        if comp.item_code not in stock_items:
+            continue
+        actual_qty = bin_data.get(comp.item_code, 0) or 0
+        possible = actual_qty // comp.qty
+        min_bundles = min(min_bundles, possible)
+
+    return int(min_bundles) if min_bundles != float("inf") else 0
 
 
 def format_invoice_response(invoice):
@@ -321,7 +425,7 @@ def format_invoice_response(invoice):
         "po_no": invoice.get("po_no"),
         "po_date": str(invoice.po_date) if invoice.get("po_date") else None,
         "remarks": invoice.get("remarks"),
-        "campaign": invoice.get("campaign"),
+        "campaign": invoice.get("campaign") or invoice.get("utm_campaign"),
 
         # Printing
         "letter_head": invoice.get("letter_head"),
@@ -393,7 +497,7 @@ def format_invoice_item(item):
         "is_free_item": item.get("is_free_item"),
         "serial_no": item.serial_no,
         "batch_no": item.batch_no,
-        "serial_and_batch_bundle": item.get("serial_and_batch_bundle"),
+        "serial_and_batch_bundle": item.get("serial_and_batch_bundle") if frappe.get_meta("POS Invoice Item").has_field("serial_and_batch_bundle") else None,
         "actual_qty": item.get("actual_qty"),
         "warehouse": item.get("warehouse"),
         "income_account": item.get("income_account"),

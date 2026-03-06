@@ -2,11 +2,13 @@ import frappe
 from frappe import _
 from frappe.utils import nowdate, nowtime
 import json
+from posify.api._utils import validate_pos_access
 
 
 @frappe.whitelist()
 def get_opening_data():
     """Get data needed for opening a POS shift."""
+    validate_pos_access()
     user = frappe.session.user
 
     # Check for existing open entry
@@ -37,6 +39,7 @@ def get_shift_summary(opening_entry):
     Uses ERPNext's built-in make_closing_entry_from_opening to get
     accurate invoice data with proper timestamp range filtering.
     """
+    validate_pos_access()
     from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import (
         make_closing_entry_from_opening,
     )
@@ -53,13 +56,24 @@ def get_shift_summary(opening_entry):
 
     payment_summary = []
     for pr in closing_entry.payment_reconciliation:
-        opening_amt = getattr(pr, "opening_amount", None) or opening_amounts.get(pr.mode_of_payment, 0)
+        row_opening = getattr(pr, "opening_amount", None)
+        if row_opening:
+            # v14/v15: opening_amount is prepopulated on the row,
+            # and expected_amount = opening + sales
+            opening_amt = row_opening
+            sales_amt = (pr.expected_amount or 0) - opening_amt
+        else:
+            # v16: opening_amount is 0 on the row,
+            # and expected_amount = sales only (opening not included)
+            opening_amt = opening_amounts.get(pr.mode_of_payment, 0)
+            sales_amt = pr.expected_amount or 0
+
         payment_summary.append(
             {
                 "mode_of_payment": pr.mode_of_payment,
                 "opening_amount": opening_amt,
-                "sales_amount": (pr.expected_amount or 0) - opening_amt,
-                "expected_amount": pr.expected_amount or 0,
+                "sales_amount": sales_amt,
+                "expected_amount": opening_amt + sales_amt,
             }
         )
 
@@ -82,6 +96,7 @@ def get_shift_summary(opening_entry):
 @frappe.whitelist()
 def check_opening_entry(user=""):
     """Check if user has an open POS Opening Entry."""
+    validate_pos_access()
     user = user or frappe.session.user
     entries = frappe.get_all(
         "POS Opening Entry",
@@ -94,6 +109,7 @@ def check_opening_entry(user=""):
 @frappe.whitelist()
 def create_opening_entry(pos_profile, company, balance_details):
     """Create a new POS Opening Entry."""
+    validate_pos_access(pos_profile)
     if isinstance(balance_details, str):
         balance_details = json.loads(balance_details)
 
@@ -117,13 +133,125 @@ def create_opening_entry(pos_profile, company, balance_details):
 @frappe.whitelist()
 def get_pos_profile(pos_profile):
     """Get full POS Profile document with company default currency."""
+    validate_pos_access(pos_profile)
     doc = frappe.get_doc("POS Profile", pos_profile)
     result = doc.as_dict()
     if not result.get("currency") and result.get("company"):
         result["currency"] = frappe.db.get_value(
             "Company", result["company"], "default_currency"
         )
+
+    # Normalize v14/v15/v16 field differences so frontend reads consistent keys:
+    # v16 renamed disable_grand_total_to_default_mop → set_grand_total_to_default_mop (inverted)
+    if "set_grand_total_to_default_mop" in result and "disable_grand_total_to_default_mop" not in result:
+        result["disable_grand_total_to_default_mop"] = not result["set_grand_total_to_default_mop"]
+    # v14: field doesn't exist at all — default to False (pre-fill enabled)
+    if "disable_grand_total_to_default_mop" not in result:
+        result["disable_grand_total_to_default_mop"] = False
+
     return result
+
+
+@frappe.whitelist()
+def get_branding(company=""):
+    """Get app logo and favicon for the POS UI.
+
+    Reads from Website Settings (app_logo, favicon) with fallback to Company logo.
+    Uses frappe.db.get_single_value so no doctype read permission is needed.
+    """
+    validate_pos_access()
+    app_logo = frappe.db.get_single_value("Website Settings", "app_logo") or ""
+    favicon = frappe.db.get_single_value("Website Settings", "favicon") or ""
+
+    company_logo = ""
+    company_abbr = ""
+    company_name = ""
+    if company:
+        comp_data = frappe.db.get_value(
+            "Company", company, ["company_logo", "abbr", "company_name"], as_dict=True
+        )
+        if comp_data:
+            company_logo = comp_data.company_logo or ""
+            company_abbr = comp_data.abbr or ""
+            company_name = comp_data.company_name or company
+
+    return {
+        "app_logo": app_logo,
+        "favicon": favicon,
+        "company_logo": company_logo,
+        "company_abbr": company_abbr,
+        "company_name": company_name,
+    }
+
+
+@frappe.whitelist()
+def get_invoice_option_lists():
+    """Get dropdown options for Invoice Options panel.
+
+    Returns lists of Sales Partners, Projects, Shipping Rules,
+    Terms and Conditions, and Payment Terms Templates.
+    Uses frappe.get_all with ignore_permissions so non-admin POS users
+    don't need direct read access to these doctypes.
+    """
+    validate_pos_access()
+    return {
+        "sales_partners": frappe.get_all(
+            "Sales Partner", fields=["name"], limit_page_length=100,
+            ignore_permissions=True, order_by="name asc",
+        ),
+        "projects": frappe.get_all(
+            "Project", filters={"status": "Open"}, fields=["name"],
+            limit_page_length=100, ignore_permissions=True, order_by="name asc",
+        ),
+        "shipping_rules": frappe.get_all(
+            "Shipping Rule", fields=["name"], limit_page_length=50,
+            ignore_permissions=True, order_by="name asc",
+        ),
+        "terms_and_conditions": frappe.get_all(
+            "Terms and Conditions", fields=["name"], limit_page_length=50,
+            ignore_permissions=True, order_by="name asc",
+        ),
+        "payment_terms_templates": frappe.get_all(
+            "Payment Terms Template", fields=["name"], limit_page_length=50,
+            ignore_permissions=True, order_by="name asc",
+        ),
+    }
+
+
+@frappe.whitelist()
+def get_user_info():
+    """Get current user's display info (full name and avatar).
+
+    Uses frappe.db.get_value so no User doctype read permission is needed.
+    """
+    validate_pos_access()
+    user = frappe.session.user
+    data = frappe.db.get_value(
+        "User", user, ["full_name", "user_image"], as_dict=True
+    )
+    return {
+        "full_name": data.full_name if data else user,
+        "user_image": data.user_image if data else None,
+    }
+
+
+@frappe.whitelist()
+def get_opening_entry_detail(entry_name):
+    """Get POS Opening Entry status details for kiosk initialization.
+
+    Returns essential fields without requiring direct doctype read permission.
+    """
+    validate_pos_access()
+    if not frappe.db.exists("POS Opening Entry", entry_name):
+        frappe.throw(_("POS Opening Entry {0} does not exist").format(entry_name))
+
+    data = frappe.db.get_value(
+        "POS Opening Entry",
+        entry_name,
+        ["name", "docstatus", "status", "pos_profile", "company", "user"],
+        as_dict=True,
+    )
+    return data
 
 
 @frappe.whitelist()
@@ -133,6 +261,7 @@ def close_shift(opening_entry, closing_amounts=None):
     Uses make_closing_entry_from_opening which correctly fetches invoices
     by timestamp range, user, pos_profile, and excludes already-consolidated ones.
     """
+    validate_pos_access()
     from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import (
         make_closing_entry_from_opening,
     )
