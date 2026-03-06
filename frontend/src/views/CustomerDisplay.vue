@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCustomerDisplayStore } from '@/stores/customerDisplay'
+import { useSettingsStore } from '@/stores/settings'
 import AppShell from '@/components/layout/AppShell.vue'
 import {
   ArrowLeft,
@@ -23,6 +24,7 @@ import {
 const router = useRouter()
 const route = useRoute()
 const store = useCustomerDisplayStore()
+const settingsStore = useSettingsStore()
 
 const searchInput = ref('')
 const mobileShowDetail = ref(false)
@@ -61,14 +63,15 @@ function clearSearch() {
 }
 
 function formatCurrency(amount: number, currency?: string) {
+  const cur = currency || settingsStore.currency || 'USD'
   try {
     return new Intl.NumberFormat(undefined, {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: cur,
       minimumFractionDigits: 2,
     }).format(amount)
   } catch {
-    return `${currency || ''} ${amount.toFixed(2)}`
+    return `${cur} ${amount.toFixed(2)}`
   }
 }
 
