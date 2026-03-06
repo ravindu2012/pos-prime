@@ -12,10 +12,25 @@ function injectFrappeContext(): Plugin {
     name: 'inject-frappe-context',
     apply: 'build',
     transformIndexHtml(html) {
+      // Fetch user theme + Website Settings via Jinja (www pages don't have desk_theme in context)
+      const jinjaBlock = [
+        '{%- set _user_theme = (frappe.db.get_value("User", frappe.session.user, "desk_theme") or "Light").lower() -%}',
+        '{%- set ws = frappe.get_doc("Website Settings") -%}',
+      ].join('\n')
+
       // Add theme attributes to <html> tag
       html = html.replace(
         '<html lang="en">',
-        '<html lang="en" data-theme-mode="{{ desk_theme }}" data-theme="{{ desk_theme }}">'
+        jinjaBlock + '\n<html lang="en" data-theme-mode="{{ _user_theme }}" data-theme="{{ _user_theme }}">'
+      )
+
+      // Inject title + favicon from Website Settings
+      html = html.replace(
+        '<title>Posify</title>',
+        [
+          '<title>{{ ws.app_name or "Posify" }}</title>',
+          '  {% if ws.favicon %}<link rel="icon" href="{{ ws.favicon }}">{% endif %}',
+        ].join('\n  ')
       )
 
       // Inject CSRF token + theme auto-detection script

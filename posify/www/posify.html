@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" data-theme-mode="{{ desk_theme }}" data-theme="{{ desk_theme }}">
+{%- set _user_theme = (frappe.db.get_value("User", frappe.session.user, "desk_theme") or "Light").lower() -%}
+{%- set ws = frappe.get_doc("Website Settings") -%}
+<html lang="en" data-theme-mode="{{ _user_theme }}" data-theme="{{ _user_theme }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Posify</title>
-    <script type="module" crossorigin src="/assets/posify/frontend/assets/index-CkRtAsFP.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/posify/frontend/assets/index-bbJjjwVF.css">
+    <title>{{ ws.app_name or "Posify" }}</title>
+    {% if ws.favicon %}<link rel="icon" href="{{ ws.favicon }}">{% endif %}
+    <script type="module" crossorigin src="/assets/posify/frontend/assets/index-DM-c-jS6.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/posify/frontend/assets/index-Bxob-O9g.css">
     <script>window.csrf_token = "{{ frappe.session.csrf_token }}";</script>
   <script>
     (function() {

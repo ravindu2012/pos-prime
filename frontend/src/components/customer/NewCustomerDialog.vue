@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useCustomerStore } from '@/stores/customer'
+import { usePosSessionStore } from '@/stores/posSession'
 import { X } from 'lucide-vue-next'
 
 const emit = defineEmits<{
@@ -9,6 +10,7 @@ const emit = defineEmits<{
 }>()
 
 const customerStore = useCustomerStore()
+const sessionStore = usePosSessionStore()
 const customerName = ref('')
 const mobileNo = ref('')
 const emailId = ref('')
@@ -39,6 +41,7 @@ async function create() {
       customer_name: customerName.value.trim(),
       mobile_no: mobileNo.value.trim() || undefined,
       email_id: emailId.value.trim() || undefined,
+      pos_profile: sessionStore.posProfile || undefined,
     })
     emit('created')
   } catch (e: any) {
