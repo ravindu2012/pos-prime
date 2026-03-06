@@ -19,6 +19,7 @@ add_to_apps_screen = [
 # SPA routing — serve the Vue 3 frontend for /pos-prime/* routes
 website_route_rules = [
 	{"from_route": "/pos-prime/<path:app_path>", "to_route": "pos_prime"},
+	{"from_route": "/pos-prime", "to_route": "pos_prime"},
 ]
 
 # Web page served at /pos-prime
