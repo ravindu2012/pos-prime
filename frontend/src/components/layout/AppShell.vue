@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { call } from 'frappe-ui'
 import { useDraftsStore } from '@/stores/drafts'
@@ -71,35 +71,36 @@ onMounted(async () => {
     await draftsStore.fetchDrafts(sessionStore.posProfile)
   }
 
-  // Fetch company logo
-  if (sessionStore.company) {
-    try {
-      const doc = await call('frappe.client.get_value', {
-        doctype: 'Company',
-        filters: { name: sessionStore.company },
-        fieldname: ['company_logo', 'abbr'],
-      })
-      if (doc) {
-        companyLogo.value = doc.company_logo || null
-        companyAbbr.value = doc.abbr || sessionStore.company[0]
-        if (doc.company_logo) {
-          setFavicon(doc.company_logo)
-        }
-      }
-    } catch { /* ignore */ }
-  }
+  // Fetch app logo & favicon via backend endpoint (no Website Settings permission needed)
+  try {
+    const branding = await call('posify.api.pos_session.get_branding', {
+      company: sessionStore.company || '',
+    })
+    if (branding?.app_logo) {
+      companyLogo.value = branding.app_logo
+    } else if (branding?.company_logo) {
+      companyLogo.value = branding.company_logo
+    }
+    if (branding?.favicon) {
+      setFavicon(branding.favicon)
+    } else if (branding?.company_logo) {
+      setFavicon(branding.company_logo)
+    }
+    if (branding?.company_abbr) {
+      companyAbbr.value = branding.company_abbr
+    }
+    if (!companyLogo.value && sessionStore.company) {
+      companyAbbr.value = sessionStore.company[0]
+    }
+  } catch { /* ignore */ }
 
-  // Fetch user info
+  // Fetch user info via backend endpoint (no User doctype permission needed)
   if (userSession.user?.data) {
     try {
-      const doc = await call('frappe.client.get_value', {
-        doctype: 'User',
-        filters: { name: userSession.user.data },
-        fieldname: ['full_name', 'user_image'],
-      })
-      if (doc) {
-        userFullName.value = doc.full_name || userSession.user.data
-        userImage.value = doc.user_image || null
+      const userInfo = await call('posify.api.pos_session.get_user_info')
+      if (userInfo) {
+        userFullName.value = userInfo.full_name || userSession.user.data
+        userImage.value = userInfo.user_image || null
       }
     } catch {
       userFullName.value = userSession.user.data
@@ -127,11 +128,19 @@ function toggleFullscreen() {
   }
 }
 
-if (typeof document !== 'undefined') {
-  document.addEventListener('fullscreenchange', () => {
-    isFullscreen.value = !!document.fullscreenElement
-  })
+function onFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
 }
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+}
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }
+})
 
 const emit = defineEmits<{
   toggleHeldOrders: []

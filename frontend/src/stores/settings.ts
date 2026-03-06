@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { call } from 'frappe-ui'
-import { session } from './session'
 import type { POSProfile } from '@/types'
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -37,25 +36,13 @@ export const useSettingsStore = defineStore('settings', () => {
   async function fetchPOSProfiles() {
     loading.value = true
     try {
-      // Get available POS profiles for current user
-      const profiles = await call('frappe.client.get_list', {
-        doctype: 'POS Profile',
-        filters: { disabled: 0 },
-        fields: ['name', 'company'],
-        order_by: 'name asc',
-      })
-      posProfiles.value = profiles || []
-
-      // Also check for existing open entry
-      const openEntries = await call(
-        'posify.api.pos_session.check_opening_entry',
-        { user: session.user.data }
-      )
-      const openVouchers = Array.isArray(openEntries) ? openEntries : []
+      // Get POS profiles and open entry in a single call
+      const data = await call('posify.api.pos_session.get_opening_data')
+      posProfiles.value = data?.pos_profiles || []
 
       return {
         profiles: posProfiles.value,
-        openEntry: openVouchers.length > 0 ? openVouchers[0] : null,
+        openEntry: data?.opening_entry || null,
       }
     } finally {
       loading.value = false

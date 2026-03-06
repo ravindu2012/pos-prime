@@ -35,10 +35,13 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
   const outstanding = ref<CustomerOutstanding>({ outstanding: 0, credit_limit: 0 })
   const detailLoading = ref(false)
 
-  async function loadRecentCustomers() {
+  async function loadRecentCustomers(posProfile: string = '') {
     listLoading.value = true
     try {
-      const data = await call('posify.api.customers.get_recent_customers', { limit: 20 })
+      const data = await call('posify.api.customers.get_recent_customers', {
+        pos_profile: posProfile,
+        limit: 20,
+      })
       recentCustomers.value = data || []
     } catch {
       recentCustomers.value = []
@@ -47,7 +50,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
     }
   }
 
-  async function searchCustomers(term: string) {
+  async function searchCustomers(term: string, posProfile: string = '') {
     searchTerm.value = term
     if (!term || term.length < 2) {
       customers.value = []
@@ -57,7 +60,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
     try {
       const data = await call('posify.api.customers.search_customers', {
         search_term: term,
-        pos_profile: '',
+        pos_profile: posProfile,
       })
       customers.value = data || []
     } catch {
@@ -67,15 +70,15 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
     }
   }
 
-  async function loadCustomerDetail(customerName: string) {
+  async function loadCustomerDetail(customerName: string, company: string = '') {
     detailLoading.value = true
     try {
       const [doc, addrData, contactData, invoiceData, outstandingData] = await Promise.all([
-        call('frappe.client.get', { doctype: 'Customer', name: customerName }),
+        call('posify.api.customers.get_customer', { customer_name: customerName }),
         call('posify.api.addresses.get_customer_addresses', { customer: customerName }).catch(() => []),
         call('posify.api.addresses.get_customer_contacts', { customer: customerName }).catch(() => []),
-        call('posify.api.customer_profile.get_customer_pos_invoices', { customer: customerName }).catch(() => []),
-        call('posify.api.customer_profile.get_customer_outstanding', { customer: customerName }).catch(() => ({ outstanding: 0, credit_limit: 0 })),
+        call('posify.api.customer_profile.get_customer_pos_invoices', { customer: customerName, company }).catch(() => []),
+        call('posify.api.customer_profile.get_customer_outstanding', { customer: customerName, company }).catch(() => ({ outstanding: 0, credit_limit: 0 })),
       ])
 
       selectedCustomer.value = {

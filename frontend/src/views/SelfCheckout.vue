@@ -129,10 +129,9 @@ async function initializeSession() {
   }
 
   try {
-    // Fetch POS Opening Entry
-    const entry = await call('frappe.client.get', {
-      doctype: 'POS Opening Entry',
-      name: sessionName,
+    // Fetch POS Opening Entry via backend endpoint (no direct doctype permission needed)
+    const entry = await call('posify.api.pos_session.get_opening_entry_detail', {
+      entry_name: sessionName,
     })
 
     if (!entry || entry.docstatus !== 1 || entry.status === 'Closed') {
@@ -150,16 +149,14 @@ async function initializeSession() {
     // Load POS Profile
     await settingsStore.loadPOSProfile(entry.pos_profile)
 
-    // Load company info
+    // Load company info via branding endpoint (no Company doctype permission needed)
     companyName.value = entry.company
     try {
-      const companyDoc = await call('frappe.client.get', {
-        doctype: 'Company',
-        name: entry.company,
-        fields: ['company_logo', 'company_name'],
+      const branding = await call('posify.api.pos_session.get_branding', {
+        company: entry.company,
       })
-      companyLogo.value = companyDoc?.company_logo || ''
-      companyName.value = companyDoc?.company_name || entry.company
+      companyLogo.value = branding?.company_logo || ''
+      companyName.value = branding?.company_name || entry.company
     } catch {
       // Non-critical
     }

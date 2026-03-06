@@ -34,18 +34,14 @@ function update(field: string, value: any) {
 onMounted(async () => {
   // Fetch link options in parallel
   try {
-    const [sp, proj, sr, tc, pt] = await Promise.all([
-      call('frappe.client.get_list', { doctype: 'Sales Partner', fields: ['name'], limit_page_length: 100 }),
-      call('frappe.client.get_list', { doctype: 'Project', filters: { status: 'Open' }, fields: ['name'], limit_page_length: 100 }),
-      call('frappe.client.get_list', { doctype: 'Shipping Rule', fields: ['name'], limit_page_length: 50 }),
-      call('frappe.client.get_list', { doctype: 'Terms and Conditions', fields: ['name'], limit_page_length: 50 }),
-      call('frappe.client.get_list', { doctype: 'Payment Terms Template', fields: ['name'], limit_page_length: 50 }),
-    ])
-    salesPartners.value = (sp || []).map((r: any) => r.name)
-    projects.value = (proj || []).map((r: any) => r.name)
-    shippingRules.value = (sr || []).map((r: any) => r.name)
-    termsTemplates.value = (tc || []).map((r: any) => r.name)
-    paymentTermsTemplates.value = (pt || []).map((r: any) => r.name)
+    const data = await call('posify.api.pos_session.get_invoice_option_lists')
+    if (data) {
+      salesPartners.value = (data.sales_partners || []).map((r: any) => r.name)
+      projects.value = (data.projects || []).map((r: any) => r.name)
+      shippingRules.value = (data.shipping_rules || []).map((r: any) => r.name)
+      termsTemplates.value = (data.terms_and_conditions || []).map((r: any) => r.name)
+      paymentTermsTemplates.value = (data.payment_terms_templates || []).map((r: any) => r.name)
+    }
   } catch {
     // ignore
   }
