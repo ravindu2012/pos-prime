@@ -229,8 +229,12 @@ def get_item_tax_templates(company=""):
 
 
 @frappe.whitelist()
-def search_barcode(search_value):
-    """Search for an item by barcode, serial number, or batch number."""
+def search_barcode(search_value, pos_profile=""):
+    """Search for an item by barcode, item code, serial number, or batch number.
+    Returns item details including rate from the POS Profile's price list."""
+
+    result = None
+
     # Check Item Barcode
     barcode_data = frappe.get_all(
         "Item Barcode",
@@ -240,31 +244,120 @@ def search_barcode(search_value):
     )
     if barcode_data:
         item = frappe.db.get_value("Item", barcode_data[0].item_code,
-            ["item_code", "item_name", "stock_uom"], as_dict=True)
+            ["item_code", "item_name", "stock_uom", "image",
+             "has_batch_no", "has_serial_no", "is_stock_item",
+             "item_group"], as_dict=True)
         if item:
-            return {**item, "barcode": search_value}
+            result = {**item, "barcode": search_value}
+
+    # Check Item Code directly
+    if not result:
+        item = frappe.db.get_value(
+            "Item", search_value,
+            ["item_code", "item_name", "stock_uom", "disabled", "has_variants",
+             "image", "has_batch_no", "has_serial_no", "is_stock_item",
+             "item_group"], as_dict=True,
+        )
+        if item and not item.disabled and not item.has_variants:
+            result = {
+                "item_code": item.item_code, "item_name": item.item_name,
+                "stock_uom": item.stock_uom, "image": item.image,
+                "has_batch_no": item.has_batch_no, "has_serial_no": item.has_serial_no,
+                "is_stock_item": item.is_stock_item,
+                "item_group": item.item_group,
+                "barcode": search_value,
+            }
 
     # Check Serial No
-    if frappe.db.exists("Serial No", search_value):
+    if not result and frappe.db.exists("Serial No", search_value):
         sn = frappe.db.get_value("Serial No", search_value,
             ["name", "item_code", "batch_no"], as_dict=True)
         item = frappe.db.get_value("Item", sn.item_code,
-            ["item_name", "stock_uom"], as_dict=True)
-        return {"item_code": sn.item_code, "item_name": item.item_name,
+            ["item_name", "stock_uom", "image", "has_batch_no",
+             "has_serial_no", "is_stock_item", "item_group"], as_dict=True)
+        if item:
+            result = {
+                "item_code": sn.item_code, "item_name": item.item_name,
+                "stock_uom": item.stock_uom, "image": item.image,
+                "has_batch_no": item.has_batch_no, "has_serial_no": item.has_serial_no,
+                "is_stock_item": item.is_stock_item,
+                "item_group": item.item_group,
                 "serial_no": sn.name, "batch_no": sn.batch_no,
-                "uom": item.stock_uom, "barcode": search_value}
+                "barcode": search_value,
+            }
 
     # Check Batch
-    if frappe.db.exists("Batch", search_value):
+    if not result and frappe.db.exists("Batch", search_value):
         batch = frappe.db.get_value("Batch", search_value,
             ["name", "item"], as_dict=True)
         item = frappe.db.get_value("Item", batch.item,
-            ["item_name", "stock_uom"], as_dict=True)
-        return {"item_code": batch.item, "item_name": item.item_name,
-                "batch_no": batch.name, "uom": item.stock_uom,
-                "barcode": search_value}
+            ["item_name", "stock_uom", "image", "has_batch_no",
+             "has_serial_no", "is_stock_item", "item_group"], as_dict=True)
+        if item:
+            result = {
+                "item_code": batch.item, "item_name": item.item_name,
+                "stock_uom": item.stock_uom, "image": item.image,
+                "has_batch_no": item.has_batch_no, "has_serial_no": item.has_serial_no,
+                "is_stock_item": item.is_stock_item,
+                "item_group": item.item_group,
+                "batch_no": batch.name, "barcode": search_value,
+            }
 
-    return None
+    if not result:
+        return None
+
+    # Fetch rate from POS Profile's selling price list
+    price_list = "Standard Selling"
+    if pos_profile:
+        price_list = frappe.db.get_value(
+            "POS Profile", pos_profile, "selling_price_list"
+        ) or "Standard Selling"
+
+    rate = frappe.db.get_value(
+        "Item Price",
+        {"item_code": result["item_code"], "price_list": price_list, "selling": 1},
+        "price_list_rate",
+    )
+    result["rate"] = rate or 0
+    result["currency"] = frappe.defaults.get_defaults().get("currency", "USD")
+
+    # Fetch item_tax_template from Item Tax child table (same as get_items)
+    tax_template = frappe.get_all(
+        "Item Tax",
+        filters={"parent": result["item_code"]},
+        fields=["item_tax_template"],
+        order_by="idx asc",
+        limit=1,
+    )
+    result["item_tax_template"] = tax_template[0].item_tax_template if tax_template else None
+
+    # Fetch description for invoice line items
+    result["description"] = frappe.db.get_value("Item", result["item_code"], "description") or ""
+
+    # Fetch stock qty for the POS Profile's warehouse
+    warehouse = ""
+    if pos_profile:
+        warehouse = frappe.db.get_value("POS Profile", pos_profile, "warehouse") or ""
+    if warehouse:
+        actual_qty = frappe.db.get_value(
+            "Bin",
+            {"item_code": result["item_code"], "warehouse": warehouse},
+            "actual_qty",
+        ) or 0
+        # Subtract POS-reserved qty (submitted but unconsolidated POS Invoices)
+        reserved_qty = frappe.db.sql(
+            """SELECT SUM(pi_item.stock_qty) FROM `tabPOS Invoice Item` pi_item
+               INNER JOIN `tabPOS Invoice` pi ON pi.name = pi_item.parent
+               WHERE pi_item.docstatus = 1 AND pi_item.item_code = %s
+               AND pi_item.warehouse = %s AND IFNULL(pi.consolidated_invoice, '') = ''""",
+            (result["item_code"], warehouse),
+        )
+        reserved = (reserved_qty[0][0] or 0) if reserved_qty else 0
+        result["actual_qty"] = max(actual_qty - reserved, 0)
+    else:
+        result["actual_qty"] = 0
+
+    return result
 
 
 @frappe.whitelist()

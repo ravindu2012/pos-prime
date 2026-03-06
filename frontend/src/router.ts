@@ -39,6 +39,11 @@ const routes = [
     component: () => import('./views/CustomerDisplay.vue'),
     name: 'CustomerDetail',
   },
+  {
+    path: '/posify/kiosk',
+    component: () => import('./views/SelfCheckout.vue'),
+    name: 'SelfCheckout',
+  },
 ]
 
 const router = createRouter({

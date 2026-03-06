@@ -65,6 +65,26 @@ def search_customers(search_term="", pos_profile=""):
 
 
 @frappe.whitelist()
+def get_recent_customers(limit=20):
+    """Return customers who had recent POS invoices, ordered by latest transaction."""
+    return frappe.db.sql(
+        """
+        SELECT c.name, c.customer_name, c.mobile_no, c.email_id,
+               MAX(inv.posting_date) AS last_invoice_date
+        FROM `tabCustomer` c
+        INNER JOIN `tabPOS Invoice` inv ON inv.customer = c.name
+        WHERE c.disabled = 0
+          AND inv.docstatus = 1
+        GROUP BY c.name
+        ORDER BY last_invoice_date DESC
+        LIMIT %(limit)s
+    """,
+        {"limit": int(limit)},
+        as_dict=True,
+    )
+
+
+@frappe.whitelist()
 def quick_create_customer(customer_name, mobile_no=None, email_id=None):
     """Create a minimal customer record."""
     if not customer_name:
