@@ -70,11 +70,15 @@ export const useItemsStore = defineStore('items', () => {
     }
   }
 
-  async function searchByBarcode(barcode: string) {
+  async function searchByBarcode(barcode: string, posProfile?: string) {
     try {
+      const { usePosSessionStore } = await import('@/stores/posSession')
+      const session = usePosSessionStore()
+      const profile = posProfile || session.posProfile || ''
+
       const data = await call(
         'posify.api.items.search_barcode',
-        { search_value: barcode }
+        { search_value: barcode, pos_profile: profile }
       )
       return data
     } catch {

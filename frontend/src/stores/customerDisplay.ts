@@ -21,7 +21,8 @@ export interface CustomerOutstanding {
 
 export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
   // List state
-  const customers = ref<{ name: string; customer_name: string; mobile_no: string | null; email_id: string | null }[]>([])
+  const customers = ref<{ name: string; customer_name: string; mobile_no: string | null; email_id: string | null; last_invoice_date?: string }[]>([])
+  const recentCustomers = ref<{ name: string; customer_name: string; mobile_no: string | null; email_id: string | null; last_invoice_date?: string }[]>([])
   const searchTerm = ref('')
   const listLoading = ref(false)
 
@@ -33,6 +34,18 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
   const invoices = ref<CustomerInvoice[]>([])
   const outstanding = ref<CustomerOutstanding>({ outstanding: 0, credit_limit: 0 })
   const detailLoading = ref(false)
+
+  async function loadRecentCustomers() {
+    listLoading.value = true
+    try {
+      const data = await call('posify.api.customers.get_recent_customers', { limit: 20 })
+      recentCustomers.value = data || []
+    } catch {
+      recentCustomers.value = []
+    } finally {
+      listLoading.value = false
+    }
+  }
 
   async function searchCustomers(term: string) {
     searchTerm.value = term
@@ -104,6 +117,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
 
   function $reset() {
     customers.value = []
+    recentCustomers.value = []
     searchTerm.value = ''
     listLoading.value = false
     selectedCustomer.value = null
@@ -117,6 +131,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
 
   return {
     customers,
+    recentCustomers,
     searchTerm,
     listLoading,
     selectedCustomer,
@@ -126,6 +141,7 @@ export const useCustomerDisplayStore = defineStore('customerDisplay', () => {
     invoices,
     outstanding,
     detailLoading,
+    loadRecentCustomers,
     searchCustomers,
     loadCustomerDetail,
     $reset,

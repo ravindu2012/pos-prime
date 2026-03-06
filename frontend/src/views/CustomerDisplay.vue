@@ -17,6 +17,7 @@ import {
   FileText,
   Award,
   Loader2,
+  Clock,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -38,6 +39,8 @@ onMounted(() => {
     store.loadCustomerDetail(route.params.id as string)
     mobileShowDetail.value = true
   }
+  // Load recent customers on mount
+  store.loadRecentCustomers()
 })
 
 watch(searchInput, (term) => {
@@ -123,19 +126,58 @@ function formatDate(dateStr: string) {
               <Loader2 :size="24" class="animate-spin text-gray-400" />
             </div>
 
-            <!-- Empty state -->
-            <div v-else-if="!searchInput" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-              <Search :size="32" class="mb-3" />
-              <p class="text-sm">Search for a customer</p>
-              <p class="text-xs mt-1">Type at least 2 characters</p>
+            <!-- No search: show recent customers -->
+            <div v-else-if="!searchInput">
+              <div v-if="store.recentCustomers.length > 0">
+                <div class="flex items-center gap-1.5 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  <Clock :size="12" />
+                  Recent Customers
+                </div>
+                <div class="space-y-2">
+                  <button
+                    v-for="c in store.recentCustomers"
+                    :key="c.name"
+                    @click="selectCustomer(c.name)"
+                    class="w-full text-left p-3 rounded-lg border transition-all duration-150"
+                    :class="
+                      store.selectedCustomer?.name === c.name
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    "
+                  >
+                    <div class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ c.customer_name }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ c.name }}</div>
+                    <div class="flex items-center gap-3 mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                      <span v-if="c.mobile_no" class="flex items-center gap-1">
+                        <Phone :size="10" />
+                        {{ c.mobile_no }}
+                      </span>
+                      <span v-if="c.email_id" class="flex items-center gap-1 truncate">
+                        <Mail :size="10" />
+                        {{ c.email_id }}
+                      </span>
+                      <span v-if="c.last_invoice_date" class="flex items-center gap-1 ml-auto">
+                        <Clock :size="10" />
+                        {{ formatDate(c.last_invoice_date) }}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div v-else class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+                <Search :size="32" class="mb-3" />
+                <p class="text-sm">Search for a customer</p>
+                <p class="text-xs mt-1">Type at least 2 characters</p>
+              </div>
             </div>
 
+            <!-- Search with no results -->
             <div v-else-if="store.customers.length === 0 && searchInput.length >= 2" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
               <User :size="32" class="mb-3" />
               <p class="text-sm">No customers found</p>
             </div>
 
-            <!-- Customer cards -->
+            <!-- Search results -->
             <div v-else class="space-y-2">
               <button
                 v-for="c in store.customers"
@@ -167,7 +209,7 @@ function formatDate(dateStr: string) {
 
         <!-- Right: Detail -->
         <div
-          class="flex-1 bg-gray-50 dark:bg-gray-950 overflow-y-auto"
+          class="flex-1 bg-gray-100 dark:bg-gray-950 overflow-y-auto"
           :class="{ 'hidden lg:block': !mobileShowDetail }"
         >
           <!-- Loading -->
@@ -176,10 +218,12 @@ function formatDate(dateStr: string) {
           </div>
 
           <!-- No selection -->
-          <div v-else-if="!store.selectedCustomer" class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
-            <User :size="48" class="mb-4" />
-            <p class="text-base font-medium">Select a customer</p>
-            <p class="text-sm mt-1">Search and select a customer to view details</p>
+          <div v-else-if="!store.selectedCustomer" class="flex flex-col items-center justify-center h-full bg-gray-100 dark:bg-gray-950">
+            <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center mb-5">
+              <User :size="36" class="text-gray-400 dark:text-gray-500" />
+            </div>
+            <p class="text-lg font-semibold text-gray-600 dark:text-gray-300">Select a customer</p>
+            <p class="text-sm mt-1.5 text-gray-400 dark:text-gray-500">Search and select a customer to view details</p>
           </div>
 
           <!-- Customer detail -->
