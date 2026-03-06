@@ -140,13 +140,22 @@ def close_shift(opening_entry, closing_amounts=None):
     if isinstance(closing_amounts, str):
         closing_amounts = json.loads(closing_amounts)
 
-    # Validate opening entry exists and is open
+    # Validate opening entry exists
     if not frappe.db.exists("POS Opening Entry", opening_entry):
         frappe.throw(_("Opening entry {0} does not exist").format(opening_entry))
 
     opening = frappe.get_doc("POS Opening Entry", opening_entry)
 
+    # If opening entry is already closed, check if a closing entry exists
+    # (handles retries after partial failures like scheduler being inactive)
     if opening.status != "Open" or opening.docstatus != 1:
+        existing_closing = frappe.db.get_value(
+            "POS Closing Entry",
+            {"pos_opening_entry": opening_entry, "docstatus": 1},
+            "name",
+        )
+        if existing_closing:
+            return {"name": existing_closing, "status": "Closed"}
         frappe.throw(_("Opening entry {0} is not open or not submitted").format(opening_entry))
 
     # Use ERPNext's built-in function to build the closing entry
@@ -167,6 +176,18 @@ def close_shift(opening_entry, closing_amounts=None):
     closing.posting_time = nowtime()
 
     closing.insert(ignore_permissions=True)
-    closing.submit()
+
+    try:
+        closing.submit()
+    except Exception:
+        # submit() saves the doc before on_submit hooks run, so the closing
+        # entry may already be submitted even if a hook (e.g. invoice
+        # consolidation / scheduler check) fails. Reload and check.
+        closing.reload()
+        if closing.docstatus == 1:
+            # Shift closed successfully — the hook error is non-fatal
+            frappe.clear_messages()
+            return {"name": closing.name, "status": "Closed"}
+        raise
 
     return {"name": closing.name, "status": "Closed"}

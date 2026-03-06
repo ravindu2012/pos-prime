@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { call } from 'frappe-ui'
 import {
   useBroadcastDisplay,
   type DisplayMessage,
@@ -81,18 +82,29 @@ function numpadClear() {
   mobileInput.value = ''
 }
 
-function submitMobile() {
+async function submitMobile() {
   const mobile = mobileInput.value.trim()
   if (!mobile) return
   mobileStatus.value = 'searching'
-  sendUpdate({ type: 'customer_mobile', payload: { mobile } })
-  if (searchTimeoutTimer) clearTimeout(searchTimeoutTimer)
-  searchTimeoutTimer = setTimeout(() => {
-    if (mobileStatus.value === 'searching') {
+  try {
+    const results = await call('posify.api.customers.search_customers', {
+      search_term: mobile,
+      pos_profile: '',
+    })
+    if (results && results.length > 0) {
+      mobileStatus.value = 'found'
+      foundCustomerName.value = results[0].customer_name || results[0].name
+      // Notify POS to set this customer on its side
+      sendUpdate({ type: 'customer_mobile', payload: { mobile } })
+    } else {
       mobileStatus.value = 'not_found'
-      clearMobileStatus()
+      foundCustomerName.value = null
     }
-  }, 8000)
+  } catch {
+    mobileStatus.value = 'not_found'
+    foundCustomerName.value = null
+  }
+  clearMobileStatus()
 }
 
 function clearMobileStatus() {

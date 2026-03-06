@@ -212,7 +212,7 @@ function formatDate(dateStr: string) {
 
         <!-- Right: Detail -->
         <div
-          class="flex-1 bg-gray-100 dark:bg-gray-950 overflow-y-auto"
+          class="flex-1 bg-gray-100 dark:bg-gray-900 overflow-y-auto"
           :class="{ 'hidden lg:block': !mobileShowDetail }"
         >
           <!-- Loading -->
@@ -221,7 +221,7 @@ function formatDate(dateStr: string) {
           </div>
 
           <!-- No selection -->
-          <div v-else-if="!store.selectedCustomer" class="flex flex-col items-center justify-center h-full bg-gray-100 dark:bg-gray-950">
+          <div v-else-if="!store.selectedCustomer" class="flex flex-col items-center justify-center h-full bg-gray-100 dark:bg-gray-900">
             <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center mb-5">
               <User :size="36" class="text-gray-400 dark:text-gray-500" />
             </div>
@@ -232,7 +232,7 @@ function formatDate(dateStr: string) {
           <!-- Customer detail -->
           <div v-else class="max-w-3xl mx-auto p-4 lg:p-6 space-y-5">
             <!-- Header -->
-            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <div class="flex items-start justify-between">
                 <div>
                   <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -240,10 +240,10 @@ function formatDate(dateStr: string) {
                   </h3>
                   <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ store.selectedCustomer.name }}</p>
                   <div class="flex items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span v-if="store.selectedCustomer.customer_group" class="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                    <span v-if="store.selectedCustomer.customer_group" class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                       {{ store.selectedCustomer.customer_group }}
                     </span>
-                    <span v-if="store.selectedCustomer.territory" class="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                    <span v-if="store.selectedCustomer.territory" class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                       {{ store.selectedCustomer.territory }}
                     </span>
                   </div>
@@ -261,21 +261,21 @@ function formatDate(dateStr: string) {
 
             <!-- Quick stats -->
             <div class="grid grid-cols-3 gap-3">
-              <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
                 <CreditCard :size="18" class="mx-auto text-orange-500 mb-1.5" />
                 <div class="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {{ formatCurrency(store.outstanding.outstanding) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">Outstanding</div>
               </div>
-              <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
                 <Award :size="18" class="mx-auto text-purple-500 mb-1.5" />
                 <div class="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {{ store.selectedCustomer.loyalty_points || 0 }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">Loyalty Points</div>
               </div>
-              <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
                 <FileText :size="18" class="mx-auto text-blue-500 mb-1.5" />
                 <div class="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {{ store.invoices.length }}
@@ -285,7 +285,7 @@ function formatDate(dateStr: string) {
             </div>
 
             <!-- Basic info -->
-            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Basic Info</h4>
               <div class="space-y-2 text-sm">
                 <div v-if="store.selectedCustomer.mobile_no" class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -311,7 +311,7 @@ function formatDate(dateStr: string) {
             </div>
 
             <!-- Addresses -->
-            <div v-if="store.addresses.length > 0" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div v-if="store.addresses.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 Addresses ({{ store.addresses.length }})
               </h4>
@@ -319,7 +319,7 @@ function formatDate(dateStr: string) {
                 <div
                   v-for="addr in store.addresses"
                   :key="addr.name"
-                  class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
                   <div class="flex items-center gap-2 mb-1">
                     <MapPin :size="12" class="text-gray-400" />
@@ -335,7 +335,7 @@ function formatDate(dateStr: string) {
             </div>
 
             <!-- Contacts -->
-            <div v-if="store.contacts.length > 0" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div v-if="store.contacts.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 Contacts ({{ store.contacts.length }})
               </h4>
@@ -343,7 +343,7 @@ function formatDate(dateStr: string) {
                 <div
                   v-for="contact in store.contacts"
                   :key="contact.name"
-                  class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
                   <div class="flex items-center gap-2 mb-1">
                     <User :size="12" class="text-gray-400" />
@@ -366,7 +366,7 @@ function formatDate(dateStr: string) {
             </div>
 
             <!-- Loyalty -->
-            <div v-if="store.loyaltyData" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div v-if="store.loyaltyData" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 <Star :size="14" class="inline mr-1 text-purple-500" />
                 Loyalty Program
@@ -392,7 +392,7 @@ function formatDate(dateStr: string) {
             </div>
 
             <!-- Recent POS Invoices -->
-            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 Recent POS Invoices
               </h4>
@@ -438,7 +438,7 @@ function formatDate(dateStr: string) {
                               ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                               : inv.status === 'Paid'
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           "
                         >
                           {{ inv.is_return ? 'Return' : inv.status }}
