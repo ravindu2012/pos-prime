@@ -25,6 +25,24 @@ ERPNext's built-in POS is functional but limited. Posify is a complete replaceme
 
 ---
 
+## Zero Modifications to ERPNext
+
+Posify does **not** add custom fields, custom doctypes, or modify any existing ERPNext schema. It works entirely with ERPNext's standard doctypes:
+
+- **POS Profile** - your existing POS configuration
+- **POS Opening Entry** - standard shift management
+- **POS Invoice** - native ERPNext invoices, fully compatible with consolidation and accounting
+- **Item, Customer, Item Price, Bin** - reads directly from your existing data
+- **Item Tax Template, Sales Taxes and Charges** - uses your existing tax setup
+
+**Why this matters:**
+- Upgrade ERPNext freely - Posify will never block or break your upgrades
+- Uninstall cleanly - remove Posify and nothing changes in your ERPNext data
+- No data lock-in - every invoice Posify creates is a standard POS Invoice, visible in Desk and reports
+- Works alongside ERPNext's built-in POS - use both if you want
+
+---
+
 ## Screenshots
 
 ### POS - Item Grid & Cart
