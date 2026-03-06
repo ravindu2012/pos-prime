@@ -2,13 +2,15 @@
 import { ref, onMounted, computed } from 'vue'
 import { call } from 'frappe-ui'
 import { useSettingsStore } from '@/stores/settings'
-import { X, Check, Package } from 'lucide-vue-next'
+import { X, Check, Package, Zap } from 'lucide-vue-next'
+import { toast } from '@/composables/useToast'
 
 const props = defineProps<{
   itemCode: string
   itemName: string
   hasBatchNo: boolean
   hasSerialNo: boolean
+  qty?: number
 }>()
 
 const emit = defineEmits<{
@@ -76,6 +78,29 @@ function addSerialManual() {
   if (sn && !selectedSerials.value.includes(sn)) {
     selectedSerials.value.push(sn)
     serialInput.value = ''
+  }
+}
+
+const autoFetching = ref(false)
+
+async function autoFetchSerials() {
+  const needed = props.qty || 1
+  autoFetching.value = true
+  try {
+    const result = await call('posify.api.stock.auto_fetch_serial_nos', {
+      item_code: props.itemCode,
+      warehouse,
+      qty: needed,
+      batch_no: selectedBatch.value || undefined,
+    }) || []
+    selectedSerials.value = result
+    if (result.length < needed) {
+      toast.warning(`Only ${result.length} serial numbers available (requested ${needed})`)
+    }
+  } catch (e: any) {
+    toast.error(e.message || 'Failed to auto-fetch serial numbers')
+  } finally {
+    autoFetching.value = false
   }
 }
 
@@ -162,6 +187,16 @@ function confirm() {
               Add
             </button>
           </div>
+
+          <!-- Auto Fetch button -->
+          <button
+            @click="autoFetchSerials"
+            :disabled="autoFetching"
+            class="w-full mb-2 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            <Zap :size="12" />
+            {{ autoFetching ? 'Fetching...' : `Auto Fetch (${qty || 1})` }}
+          </button>
 
           <!-- Selected serials -->
           <div v-if="selectedSerials.length > 0" class="flex flex-wrap gap-1 mb-2">

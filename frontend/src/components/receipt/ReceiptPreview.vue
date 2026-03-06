@@ -4,7 +4,8 @@ import { usePaymentStore } from '@/stores/payment'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
-import { Printer, Plus, X, Check, Share2, Loader2 } from 'lucide-vue-next'
+import { Printer, Plus, X, Check, Share2, Loader2, Mail } from 'lucide-vue-next'
+import EmailReceiptDialog from './EmailReceiptDialog.vue'
 
 const emit = defineEmits<{
   newOrder: []
@@ -55,6 +56,7 @@ function printReceipt() {
 }
 
 const sharing = ref(false)
+const showEmailDialog = ref(false)
 
 async function generateReceiptPdf(): Promise<Blob> {
   const { default: html2canvas } = await import('html2canvas')
@@ -330,6 +332,12 @@ function newOrder() {
               Print
             </button>
             <button
+              @click="showEmailDialog = true"
+              class="py-2.5 px-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-150 flex items-center justify-center"
+            >
+              <Mail :size="16" />
+            </button>
+            <button
               @click="newOrder"
               class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center gap-2"
             >
@@ -340,6 +348,14 @@ function newOrder() {
         </div>
       </div>
     </div>
+
+    <!-- Email Receipt Dialog -->
+    <EmailReceiptDialog
+      v-if="showEmailDialog && invoice"
+      :invoice-name="invoice.name"
+      :default-email="invoice.contact_email || ''"
+      @close="showEmailDialog = false"
+    />
   </Teleport>
 </template>
 
