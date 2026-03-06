@@ -61,16 +61,14 @@ useKeyboardShortcuts({
 const companyLogo = ref<string | null>(null)
 
 async function sendInitToDisplay() {
-  // Fetch company logo
+  // Fetch company logo via branding endpoint (no Company doctype permission needed)
   let logo: string | null = null
   if (sessionStore.company) {
     try {
-      const doc = await call('frappe.client.get_value', {
-        doctype: 'Company',
-        filters: { name: sessionStore.company },
-        fieldname: ['company_logo'],
+      const branding = await call('posify.api.pos_session.get_branding', {
+        company: sessionStore.company,
       })
-      if (doc?.company_logo) logo = doc.company_logo
+      if (branding?.company_logo) logo = branding.company_logo
     } catch { /* ignore */ }
   }
   companyLogo.value = logo

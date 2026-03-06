@@ -41,9 +41,8 @@ export const useCustomerStore = defineStore('customer', () => {
   async function setCustomer(customerName: string) {
     loading.value = true
     try {
-      const data = await call('frappe.client.get', {
-        doctype: 'Customer',
-        name: customerName,
+      const data = await call('posify.api.customers.get_customer', {
+        customer_name: customerName,
       })
       customer.value = {
         name: data.name,
@@ -109,6 +108,7 @@ export const useCustomerStore = defineStore('customer', () => {
     customer_name: string
     mobile_no?: string
     email_id?: string
+    pos_profile?: string
   }) {
     loading.value = true
     try {
