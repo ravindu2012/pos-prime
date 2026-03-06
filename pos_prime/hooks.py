@@ -10,7 +10,7 @@ required_apps = ["erpnext"]
 add_to_apps_screen = [
 	{
 		"name": "pos_prime",
-		"logo": "/assets/pos_prime/manifest/pos-prime-logo.svg",
+		"logo": "/assets/pos_prime/manifest/pos-prime-logo.png",
 		"title": "POS Prime",
 		"route": "/pos-prime",
 	}
