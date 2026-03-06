@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCustomerDisplayStore } from '@/stores/customerDisplay'
+import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import AppShell from '@/components/layout/AppShell.vue'
 import {
@@ -24,6 +25,7 @@ import {
 const router = useRouter()
 const route = useRoute()
 const store = useCustomerDisplayStore()
+const sessionStore = usePosSessionStore()
 const settingsStore = useSettingsStore()
 
 const searchInput = ref('')
@@ -38,28 +40,28 @@ onUnmounted(() => {
 onMounted(() => {
   // If route has :id param, load that customer
   if (route.params.id) {
-    store.loadCustomerDetail(route.params.id as string)
+    store.loadCustomerDetail(route.params.id as string, sessionStore.company)
     mobileShowDetail.value = true
   }
   // Load recent customers on mount
-  store.loadRecentCustomers()
+  store.loadRecentCustomers(sessionStore.posProfile)
 })
 
 watch(searchInput, (term) => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    store.searchCustomers(term)
+    store.searchCustomers(term, sessionStore.posProfile)
   }, 300)
 })
 
 async function selectCustomer(name: string) {
-  await store.loadCustomerDetail(name)
+  await store.loadCustomerDetail(name, sessionStore.company)
   mobileShowDetail.value = true
 }
 
 function clearSearch() {
   searchInput.value = ''
-  store.searchCustomers('')
+  store.searchCustomers('', sessionStore.posProfile)
 }
 
 function formatCurrency(amount: number, currency?: string) {

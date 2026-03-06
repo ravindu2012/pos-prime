@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { session } from './stores/session'
+import ToastContainer from './components/layout/ToastContainer.vue'
 
 const router = useRouter()
 
@@ -22,4 +23,5 @@ onMounted(async () => {
   <div v-else class="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
     <div class="text-gray-500 dark:text-gray-400">Loading...</div>
   </div>
+  <ToastContainer />
 </template>

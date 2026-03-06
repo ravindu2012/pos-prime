@@ -106,7 +106,12 @@ Customer display with phone number entry for loyalty point lookup.
 - POS returns and refunds
 - Order history with search and filters
 - Print and reprint invoices
-- Hold and resume orders
+- Email receipts with PDF attachment
+- Hold and resume orders (with delete confirmation)
+- Auto-fetch serial numbers (FIFO)
+- Product Bundle support with computed stock availability
+- Dark/Light mode follows ERPNext user theme preference
+- Favicon and app logo from Website Settings
 
 ### Self-Checkout Kiosk
 - Fullscreen kiosk mode for dedicated touchscreens
@@ -129,6 +134,43 @@ Customer display with phone number entry for loyalty point lookup.
 - Loyalty points balance
 - Recent POS invoice history
 - Quick customer search
+
+### Batch & Serial Number Management
+- Batch selection with qty and expiry dates
+- Manual serial number entry or scan
+- Auto-fetch serial numbers by quantity (FIFO order)
+- Batch-filtered serial number selection
+
+### Product Bundles
+- Automatic detection of Product Bundle items
+- Computed availability based on component stock
+- Visual "Bundle" badge on item cards
+- Component-level stock validation on invoice submission
+
+### Email Receipts
+- Email invoice PDF to customer from receipt screen or order detail
+- Pre-fills customer email when available
+- Custom message support
+- Uses POS Profile print format for PDF attachment
+
+### Theme & Branding
+- Automatically follows ERPNext user's Dark/Light/Automatic theme preference
+- App logo from Website Settings (falls back to Company logo)
+- Favicon from Website Settings
+- App name from Website Settings shown in browser tab
+
+---
+
+## POS Profile Field Coverage
+
+Posify reads **38 of 40 meaningful fields** from the standard POS Profile doctype (95% coverage). The following fields are intentionally not used:
+
+| Field | Reason |
+|-------|--------|
+| `disabled` | Filtered at query level when listing available profiles; not needed at runtime |
+| `country` | Read-only field auto-fetched from Company by Frappe; not directly consumed |
+
+All 12 layout fields (Section Break, Column Break) are structural and only relevant to the Desk form UI.
 
 ---
 
