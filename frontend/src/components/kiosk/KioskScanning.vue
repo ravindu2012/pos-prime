@@ -142,7 +142,7 @@ defineExpose({ showScannedFeedback, showScanError })
           <div class="space-y-3">
             <div
               v-for="(item, index) in cartStore.items"
-              :key="item.item_code"
+              :key="item.item_code + '-' + index"
               class="flex items-center gap-4 rounded-2xl p-4"
               style="background: #1e293b; border: 1px solid rgba(255,255,255,0.04);"
             >
@@ -262,7 +262,7 @@ defineExpose({ showScannedFeedback, showScanError })
             {{ cartStore.items.length > 0 ? cartStore.totalItems + ' item' + (cartStore.totalItems !== 1 ? 's' : '') : 'No items yet' }}
           </p>
           <p class="text-2xl font-bold text-white">
-            {{ formatCurrency(cartStore.roundedTotal || cartStore.grandTotal) }}
+            {{ formatCurrency(cartStore.roundedTotal ?? cartStore.grandTotal) }}
           </p>
         </div>
         <div class="flex items-center gap-3">

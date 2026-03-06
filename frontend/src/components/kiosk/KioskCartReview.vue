@@ -69,7 +69,7 @@ function removeItem(index: number) {
       <div v-else class="space-y-3">
         <div
           v-for="(item, index) in cartStore.items"
-          :key="item.item_code"
+          :key="item.item_code + '-' + index"
           class="flex items-center gap-5 rounded-2xl p-5"
           style="background: #1e293b; border: 1px solid rgba(255,255,255,0.04);"
         >
@@ -139,7 +139,7 @@ function removeItem(index: number) {
           </div>
           <div class="flex justify-between border-t pt-3" style="border-color: rgba(255,255,255,0.08);">
             <span class="text-xl font-semibold text-white">Total</span>
-            <span class="text-3xl font-bold text-white">{{ formatCurrency(cartStore.roundedTotal || cartStore.grandTotal) }}</span>
+            <span class="text-3xl font-bold text-white">{{ formatCurrency(cartStore.roundedTotal ?? cartStore.grandTotal) }}</span>
           </div>
         </div>
 

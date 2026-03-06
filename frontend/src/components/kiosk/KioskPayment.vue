@@ -29,7 +29,7 @@ const cartStore = useCartStore()
       <!-- Amount -->
       <p class="mb-3 text-lg font-medium" style="color: rgba(255,255,255,0.4);">Total Amount</p>
       <p class="mb-14 text-6xl font-bold text-white" style="letter-spacing: -0.03em;">
-        {{ formatCurrency(cartStore.roundedTotal || cartStore.grandTotal) }}
+        {{ formatCurrency(cartStore.roundedTotal ?? cartStore.grandTotal) }}
       </p>
 
       <!-- Error message -->

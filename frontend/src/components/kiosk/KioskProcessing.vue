@@ -32,7 +32,7 @@ const cartStore = useCartStore()
 
       <!-- Amount -->
       <p class="mb-12 text-5xl font-bold text-white" style="letter-spacing: -0.03em;">
-        {{ formatCurrency(cartStore.roundedTotal || cartStore.grandTotal) }}
+        {{ formatCurrency(cartStore.roundedTotal ?? cartStore.grandTotal) }}
       </p>
 
       <!-- Loading dots -->

@@ -246,8 +246,8 @@ def search_barcode(search_value, pos_profile=""):
         item = frappe.db.get_value("Item", barcode_data[0].item_code,
             ["item_code", "item_name", "stock_uom", "image",
              "has_batch_no", "has_serial_no", "is_stock_item",
-             "item_group"], as_dict=True)
-        if item:
+             "item_group", "disabled", "has_variants"], as_dict=True)
+        if item and not item.disabled and not item.has_variants:
             result = {**item, "barcode": search_value}
 
     # Check Item Code directly
@@ -274,8 +274,9 @@ def search_barcode(search_value, pos_profile=""):
             ["name", "item_code", "batch_no"], as_dict=True)
         item = frappe.db.get_value("Item", sn.item_code,
             ["item_name", "stock_uom", "image", "has_batch_no",
-             "has_serial_no", "is_stock_item", "item_group"], as_dict=True)
-        if item:
+             "has_serial_no", "is_stock_item", "item_group",
+             "disabled", "has_variants"], as_dict=True)
+        if item and not item.disabled and not item.has_variants:
             result = {
                 "item_code": sn.item_code, "item_name": item.item_name,
                 "stock_uom": item.stock_uom, "image": item.image,
@@ -292,8 +293,9 @@ def search_barcode(search_value, pos_profile=""):
             ["name", "item"], as_dict=True)
         item = frappe.db.get_value("Item", batch.item,
             ["item_name", "stock_uom", "image", "has_batch_no",
-             "has_serial_no", "is_stock_item", "item_group"], as_dict=True)
-        if item:
+             "has_serial_no", "is_stock_item", "item_group",
+             "disabled", "has_variants"], as_dict=True)
+        if item and not item.disabled and not item.has_variants:
             result = {
                 "item_code": batch.item, "item_name": item.item_name,
                 "stock_uom": item.stock_uom, "image": item.image,
