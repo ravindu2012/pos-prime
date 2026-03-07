@@ -276,12 +276,23 @@ function enterFullscreen() {
         <!-- Scrollable item list -->
         <div class="cart-items">
           <TransitionGroup name="item-list" tag="div">
-            <div v-for="(item, i) in cartData.items" :key="item.item_name + '-' + i" class="cart-item">
+            <div v-for="(item, i) in cartData.items" :key="item.item_name + '-' + i" class="cart-item" :class="{ 'cart-item--free': item.is_free_item }">
               <div class="cart-item-info">
-                <span class="cart-item-name">{{ item.item_name }}</span>
-                <span class="cart-item-meta">Qty: {{ item.qty }} &times; {{ fmt(item.rate, cartData.currency) }}</span>
+                <div class="cart-item-name-row">
+                  <span class="cart-item-name">{{ item.item_name }}</span>
+                  <span v-if="item.is_free_item" class="cart-free-badge">FREE</span>
+                  <span v-else-if="item.pricing_rules" class="cart-promo-badge">Promo</span>
+                </div>
+                <div v-if="item.is_free_item" class="cart-item-meta">Promotional item</div>
+                <div v-else class="cart-item-meta">
+                  <span>Qty: {{ item.qty }} × </span>
+                  <span v-if="item.price_list_rate && item.price_list_rate !== item.rate" class="cart-strike">{{ fmt(item.price_list_rate, cartData.currency) }}</span>
+                  <span>{{ fmt(item.rate, cartData.currency) }}</span>
+                  <span v-if="item.discount_percentage && item.discount_percentage > 0" class="cart-disc-badge">-{{ item.discount_percentage }}%</span>
+                  <span v-else-if="item.discount_amount && item.discount_amount > 0" class="cart-disc-badge">-{{ fmt(item.discount_amount, cartData.currency) }}</span>
+                </div>
               </div>
-              <span class="cart-item-amount">{{ fmt(item.amount, cartData.currency) }}</span>
+              <span class="cart-item-amount" :class="{ 'cart-item-amount--free': item.is_free_item }">{{ item.is_free_item ? 'FREE' : fmt(item.amount, cartData.currency) }}</span>
             </div>
           </TransitionGroup>
           <div v-if="cartData.items.length === 0" class="cart-empty">
@@ -296,9 +307,13 @@ function enterFullscreen() {
             <span>Subtotal ({{ cartData.totalItems }} item{{ cartData.totalItems !== 1 ? 's' : '' }})</span>
             <span>{{ fmt(cartData.subtotal, cartData.currency) }}</span>
           </div>
-          <div v-if="cartData.discountValue > 0" class="cart-summary-row cart-discount">
+          <div v-if="cartData.pricingRuleDiscount" class="cart-summary-row cart-discount">
+            <span>Promo Discount{{ cartData.pricingRuleDiscount.type === 'percentage' ? ` (${cartData.pricingRuleDiscount.value}%)` : '' }}</span>
+            <span>-{{ fmt(cartData.subtotal - cartData.netTotal, cartData.currency) }}</span>
+          </div>
+          <div v-else-if="cartData.discountValue > 0" class="cart-summary-row cart-discount">
             <span>Discount{{ cartData.discountType === 'percentage' ? ` (${cartData.discountValue}%)` : '' }}</span>
-            <span>-{{ cartData.discountType === 'amount' ? fmt(cartData.discountValue, cartData.currency) : '' }}</span>
+            <span>-{{ fmt(cartData.subtotal - cartData.netTotal, cartData.currency) }}</span>
           </div>
           <div v-if="cartData.taxAmount > 0" class="cart-summary-row">
             <span>Tax</span>
@@ -694,6 +709,12 @@ function enterFullscreen() {
   flex: 1;
 }
 
+.cart-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .cart-item-name {
   font-size: 1.05rem;
   font-weight: 500;
@@ -703,9 +724,49 @@ function enterFullscreen() {
   text-overflow: ellipsis;
 }
 
+.cart-free-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.cart-promo-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
 .cart-item-meta {
   font-size: 0.8rem;
   color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.cart-strike {
+  text-decoration: line-through;
+  color: #cbd5e1;
+}
+
+.cart-disc-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ea580c;
+  background: #fff7ed;
+  padding: 0 0.3rem;
+  border-radius: 3px;
 }
 
 .cart-item-amount {
@@ -714,6 +775,16 @@ function enterFullscreen() {
   color: #334155;
   flex-shrink: 0;
   margin-left: 1rem;
+}
+
+.cart-item-amount--free {
+  color: #059669;
+  font-weight: 700;
+}
+
+.cart-item--free {
+  background: #f0fdf4;
+  border-bottom-color: #dcfce7;
 }
 
 .cart-empty {

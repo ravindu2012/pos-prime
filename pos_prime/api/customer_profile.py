@@ -1,4 +1,57 @@
 import frappe
+from frappe.utils import flt
+
+
+@frappe.whitelist()
+def get_store_credit(customer, company):
+    """Get available store credit for a customer.
+
+    Store credit = negative GL balance (credit > debit) minus any outstanding
+    on unconsolidated POS Invoices that haven't created GL entries yet.
+    """
+    if not customer or not company:
+        return {"store_credit": 0}
+
+    if not frappe.db.exists("Customer", customer):
+        return {"store_credit": 0}
+
+    # Get customer balance from GL entries (negative = credit balance)
+    gl_balance = frappe.db.sql(
+        """
+        SELECT COALESCE(SUM(debit) - SUM(credit), 0) as balance
+        FROM `tabGL Entry`
+        WHERE party_type = 'Customer'
+          AND party = %(customer)s
+          AND company = %(company)s
+          AND is_cancelled = 0
+        """,
+        {"customer": customer, "company": company},
+    )
+    balance = flt(gl_balance[0][0]) if gl_balance else 0
+
+    # If balance >= 0, no store credit
+    if balance >= 0:
+        return {"store_credit": 0}
+
+    gl_credit = abs(balance)
+
+    # Subtract outstanding from unconsolidated POS Invoices (no GL yet)
+    used = frappe.db.sql(
+        """
+        SELECT COALESCE(SUM(outstanding_amount), 0) as used
+        FROM `tabPOS Invoice`
+        WHERE customer = %(customer)s
+          AND company = %(company)s
+          AND docstatus = 1
+          AND IFNULL(consolidated_invoice, '') = ''
+          AND outstanding_amount > 0
+        """,
+        {"customer": customer, "company": company},
+    )
+    already_used = flt(used[0][0]) if used else 0
+
+    available = max(0, gl_credit - already_used)
+    return {"store_credit": flt(available, 2)}
 
 
 @frappe.whitelist()

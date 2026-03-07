@@ -20,12 +20,16 @@ export const useCartStore = defineStore('cart', () => {
   // Invoice-level discount
   const discountType = ref<'percentage' | 'amount'>('percentage')
   const discountValue = ref(0)
+  const applyDiscountOn = ref<'Grand Total' | 'Net Total'>('Grand Total')
 
   // Coupon code
   const couponCode = ref<string | null>(null)
 
   // Invoice-level optional fields
   const invoiceOptions = ref<InvoiceOptions>({})
+
+  // Pricing-rule-applied transaction discount (from server)
+  const pricingRuleDiscount = ref<{ type: 'percentage' | 'amount'; value: number } | null>(null)
 
   // Tax calculation state
   const taxCalculating = ref(false)
@@ -127,6 +131,9 @@ export const useCartStore = defineStore('cart', () => {
 
   function updateItemDiscount(index: number, discount: number) {
     items.value[index].discount_percentage = Math.min(Math.max(discount, 0), 100)
+    // User override clears pricing rule (server will re-evaluate)
+    items.value[index].pricing_rules = null
+    items.value[index].price_list_rate = null
     recalcItemAmount(index)
     debounceTaxCalculation()
   }
@@ -150,6 +157,9 @@ export const useCartStore = defineStore('cart', () => {
   function updateItemDiscountAmount(index: number, discountAmt: number) {
     items.value[index].discount_amount = Math.max(discountAmt, 0)
     items.value[index].discount_percentage = 0 // clear % when using flat
+    // User override clears pricing rule (server will re-evaluate)
+    items.value[index].pricing_rules = null
+    items.value[index].price_list_rate = null
     recalcItemAmount(index)
     debounceTaxCalculation()
   }
@@ -165,7 +175,11 @@ export const useCartStore = defineStore('cart', () => {
 
   function recalcItemAmount(index: number) {
     const item = items.value[index]
-    if (item.discount_amount > 0) {
+    if (item.pricing_rules) {
+      // Rate is already the final discounted rate from the pricing engine;
+      // discount_percentage/discount_amount are kept for display only.
+      item.amount = item.qty * item.rate
+    } else if (item.discount_amount > 0) {
       // discount_amount is total line discount (not per-unit), matching ERPNext behavior
       item.amount = Math.max(0, item.qty * item.rate - item.discount_amount)
     } else {
@@ -255,7 +269,7 @@ export const useCartStore = defineStore('cart', () => {
         })),
         additional_discount_percentage: additionalDiscountPercentage.value,
         discount_amount: additionalDiscountAmount.value,
-        apply_discount_on: 'Grand Total',
+        apply_discount_on: applyDiscountOn.value,
         coupon_code: couponCode.value || undefined,
       })
 
@@ -270,6 +284,24 @@ export const useCartStore = defineStore('cart', () => {
 
       // Apply pricing rule data to cart items
       applyPricingRuleData(data.pricing_rules || [], data.free_items || [])
+
+      // Track apply_discount_on from server (pricing rules may override)
+      if (data.apply_discount_on) {
+        applyDiscountOn.value = data.apply_discount_on
+      }
+
+      // Detect transaction-level pricing rule discount
+      const serverDiscPct = data.additional_discount_percentage || 0
+      const serverDiscAmt = data.discount_amount || 0
+      const sentDiscPct = additionalDiscountPercentage.value
+      const sentDiscAmt = additionalDiscountAmount.value
+      if (serverDiscPct > sentDiscPct) {
+        pricingRuleDiscount.value = { type: 'percentage', value: serverDiscPct }
+      } else if (serverDiscAmt > sentDiscAmt) {
+        pricingRuleDiscount.value = { type: 'amount', value: serverDiscAmt }
+      } else {
+        pricingRuleDiscount.value = null
+      }
     } catch {
       if (currentId !== taxRequestId) return
       error.value = 'Tax calculation failed'
@@ -302,15 +334,18 @@ export const useCartStore = defineStore('cart', () => {
       if (cartItem) {
         cartItem.pricing_rules = pr.pricing_rules
         cartItem.price_list_rate = pr.price_list_rate
-        // Update rate and discount from pricing rule
-        if (pr.discount_percentage > 0 && cartItem.discount_percentage === 0) {
-          cartItem.discount_percentage = pr.discount_percentage
-          recalcItemAmount(items.value.indexOf(cartItem))
-        }
-        if (pr.rate !== cartItem.rate && pr.rate > 0) {
+        // Update rate from pricing rule (the server returns the final discounted rate)
+        if (pr.rate > 0 && pr.rate !== cartItem.rate) {
           cartItem.rate = pr.rate
-          recalcItemAmount(items.value.indexOf(cartItem))
         }
+        // Update discount fields from pricing rule
+        if (pr.discount_percentage > 0) {
+          cartItem.discount_percentage = pr.discount_percentage
+        }
+        if (pr.discount_amount > 0) {
+          cartItem.discount_amount = pr.discount_amount
+        }
+        recalcItemAmount(items.value.indexOf(cartItem))
       }
     }
 
@@ -354,6 +389,7 @@ export const useCartStore = defineStore('cart', () => {
     serverRoundedTotal.value = null
     serverRoundingAdjustment.value = 0
     serverTotalTaxesAndCharges.value = 0
+    pricingRuleDiscount.value = null
   }
 
   function $reset() {
@@ -361,6 +397,7 @@ export const useCartStore = defineStore('cart', () => {
     selectedItemIndex.value = null
     discountType.value = 'percentage'
     discountValue.value = 0
+    applyDiscountOn.value = 'Grand Total'
     couponCode.value = null
     invoiceOptions.value = {}
     taxCalculating.value = false
@@ -381,6 +418,7 @@ export const useCartStore = defineStore('cart', () => {
     discountType,
     discountValue,
     couponCode,
+    applyDiscountOn,
     invoiceOptions,
     subtotal,
     additionalDiscountPercentage,
@@ -396,6 +434,7 @@ export const useCartStore = defineStore('cart', () => {
     updateRate,
     updateItemDiscount,
     updateItemDiscountAmount,
+    pricingRuleDiscount,
     updateItemTaxTemplate,
     updateItemBatchSerial,
     updateItemUom,

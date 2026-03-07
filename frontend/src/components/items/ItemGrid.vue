@@ -9,7 +9,7 @@ import ItemCard from './ItemCard.vue'
 import ItemSearch from './ItemSearch.vue'
 import ItemGroupFilter from './ItemGroupFilter.vue'
 import CameraScanner from '@/components/scanner/CameraScanner.vue'
-import { Package } from 'lucide-vue-next'
+import { Package, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
 import type { Item } from '@/types'
 
 const itemsStore = useItemsStore()
@@ -18,6 +18,12 @@ const settingsStore = useSettingsStore()
 const scrollContainer = ref<HTMLElement | null>(null)
 const showCameraScanner = ref(false)
 const columnCount = ref(4)
+const showCategories = ref(localStorage.getItem('pos_show_categories') !== 'false')
+
+function toggleCategories() {
+  showCategories.value = !showCategories.value
+  localStorage.setItem('pos_show_categories', String(showCategories.value))
+}
 
 onMounted(() => {
   itemsStore.fetchItemGroups()
@@ -137,8 +143,18 @@ function onCameraScan(value: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <div class="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2">
+      <button
+        v-if="itemsStore.itemGroups.length > 1"
+        class="hidden lg:flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+        :title="showCategories ? __('Hide categories') : __('Show categories')"
+        @click="toggleCategories"
+      >
+        <PanelLeftClose v-if="showCategories" :size="18" />
+        <PanelLeftOpen v-else :size="18" />
+      </button>
       <ItemSearch
+        class="flex-1"
         :model-value="itemsStore.searchTerm"
         @update:model-value="onSearchChange"
         @open-scanner="showCameraScanner = true"
@@ -158,7 +174,7 @@ function onCameraScan(value: string) {
     <div class="flex flex-1 overflow-hidden">
       <!-- Desktop sidebar categories -->
       <ItemGroupFilter
-        v-if="itemsStore.itemGroups.length > 1"
+        v-if="itemsStore.itemGroups.length > 1 && showCategories"
         mode="desktop"
         class="hidden lg:flex"
         :groups="itemsStore.itemGroups"

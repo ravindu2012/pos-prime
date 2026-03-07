@@ -1,8 +1,8 @@
 {
   "charts": [],
-  "content": "[{\"id\":\"nc_total_pos_sales\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Sales\",\"col\":3}},{\"id\":\"nc_pos_invoices_count\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"POS Invoices Count\",\"col\":3}},{\"id\":\"nc_total_pos_returns\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Returns\",\"col\":3}},{\"id\":\"nc_open_pos_sessions\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open POS Sessions\",\"col\":3}},{\"id\":\"spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_open_pos_prime\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Open POS Prime\",\"col\":4}},{\"id\":\"sc_pos_invoice\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Invoice\",\"col\":4}},{\"id\":\"sc_pos_opening\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Opening Entry\",\"col\":4}},{\"id\":\"sc_pos_closing\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Closing Entry\",\"col\":4}},{\"id\":\"sc_pos_profile\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Profile\",\"col\":4}},{\"id\":\"sc_customer\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":4}},{\"id\":\"sc_customer_directory\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Directory\",\"col\":4}},{\"id\":\"sc_kiosk\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Self-Checkout Kiosk\",\"col\":4}},{\"id\":\"spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header_reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"card_pos\",\"type\":\"card\",\"data\":{\"card_name\":\"Point of Sale\",\"col\":4}},{\"id\":\"card_reports\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"card_masters\",\"type\":\"card\",\"data\":{\"card_name\":\"Masters\",\"col\":4}}]",
+  "content": "[{\"id\":\"nc_total_pos_sales\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Sales\",\"col\":3}},{\"id\":\"nc_pos_invoices_count\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"POS Invoices Count\",\"col\":3}},{\"id\":\"nc_total_pos_returns\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Returns\",\"col\":3}},{\"id\":\"nc_open_pos_sessions\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open POS Sessions\",\"col\":3}},{\"id\":\"spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"sc_open_pos_prime\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Open POS Prime\",\"col\":4}},{\"id\":\"sc_pos_invoice\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Invoice\",\"col\":4}},{\"id\":\"sc_pos_opening\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Opening Entry\",\"col\":4}},{\"id\":\"sc_pos_closing\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Closing Entry\",\"col\":4}},{\"id\":\"sc_pos_profile\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Profile\",\"col\":4}},{\"id\":\"sc_customer\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":4}},{\"id\":\"sc_pricing_rule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pricing Rule\",\"col\":4}},{\"id\":\"sc_coupon_code\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Coupon Code\",\"col\":4}},{\"id\":\"sc_promotional_scheme\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Promotional Scheme\",\"col\":4}},{\"id\":\"sc_customer_directory\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Directory\",\"col\":4}},{\"id\":\"sc_kiosk\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Self-Checkout Kiosk\",\"col\":4}},{\"id\":\"spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"header_reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"card_pos\",\"type\":\"card\",\"data\":{\"card_name\":\"Point of Sale\",\"col\":4}},{\"id\":\"card_pricing\",\"type\":\"card\",\"data\":{\"card_name\":\"Pricing & Promotions\",\"col\":4}},{\"id\":\"card_reports\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"card_masters\",\"type\":\"card\",\"data\":{\"card_name\":\"Masters\",\"col\":4}}]",
   "creation": "2026-03-04 00:00:00.000000",
-  "modified": "2026-03-05 00:00:00.000000",
+  "modified": "2026-03-07 00:00:00.000000",
   "modified_by": "Administrator",
   "custom_blocks": [],
   "docstatus": 0,
@@ -58,6 +58,44 @@
       "label": "POS Profile",
       "link_count": 0,
       "link_to": "POS Profile",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Pricing & Promotions",
+      "link_count": 0,
+      "onboard": 0,
+      "type": "Card Break"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Pricing Rule",
+      "link_count": 0,
+      "link_to": "Pricing Rule",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Promotional Scheme",
+      "link_count": 0,
+      "link_to": "Promotional Scheme",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Coupon Code",
+      "link_count": 0,
+      "link_to": "Coupon Code",
       "link_type": "DocType",
       "onboard": 0,
       "type": "Link"
@@ -202,6 +240,21 @@
     {
       "label": "Customer",
       "link_to": "Customer",
+      "type": "DocType"
+    },
+    {
+      "label": "Pricing Rule",
+      "link_to": "Pricing Rule",
+      "type": "DocType"
+    },
+    {
+      "label": "Coupon Code",
+      "link_to": "Coupon Code",
+      "type": "DocType"
+    },
+    {
+      "label": "Promotional Scheme",
+      "link_to": "Promotional Scheme",
       "type": "DocType"
     },
     {

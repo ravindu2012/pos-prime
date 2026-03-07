@@ -2,7 +2,7 @@
 import { useCartStore } from '@/stores/cart'
 import { useCurrency } from '@/composables/useCurrency'
 import { computed } from 'vue'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, Zap } from 'lucide-vue-next'
 
 const cartStore = useCartStore()
 const { formatCurrency } = useCurrency()
@@ -28,17 +28,27 @@ const weightUom = computed(() => {
       <span class="text-xs font-medium">{{ formatCurrency(cartStore.subtotal) }}</span>
     </div>
 
-    <!-- Discount -->
-    <div v-if="cartStore.additionalDiscountPercentage > 0" class="flex justify-between text-orange-600 dark:text-orange-400">
+    <!-- Manual discount -->
+    <div v-if="cartStore.additionalDiscountPercentage > 0 && !cartStore.pricingRuleDiscount" class="flex justify-between text-orange-600 dark:text-orange-400">
       <span class="text-xs flex items-center gap-1">
         {{ __('Discount') }}
         <span class="px-1 py-0 bg-orange-100 dark:bg-orange-900/30 rounded text-[10px] font-semibold">{{ cartStore.additionalDiscountPercentage }}%</span>
       </span>
       <span class="text-xs font-semibold">-{{ formatCurrency(cartStore.subtotal - cartStore.netTotal) }}</span>
     </div>
-    <div v-else-if="cartStore.additionalDiscountAmount > 0" class="flex justify-between text-orange-600 dark:text-orange-400">
-      <span class="text-xs">Discount</span>
+    <div v-else-if="cartStore.additionalDiscountAmount > 0 && !cartStore.pricingRuleDiscount" class="flex justify-between text-orange-600 dark:text-orange-400">
+      <span class="text-xs">{{ __('Discount') }}</span>
       <span class="text-xs font-semibold">-{{ formatCurrency(cartStore.additionalDiscountAmount) }}</span>
+    </div>
+
+    <!-- Pricing rule transaction discount -->
+    <div v-if="cartStore.pricingRuleDiscount" class="flex justify-between text-blue-600 dark:text-blue-400">
+      <span class="text-xs flex items-center gap-1">
+        <Zap :size="10" />
+        {{ __('Promo Discount') }}
+        <span v-if="cartStore.pricingRuleDiscount.type === 'percentage'" class="px-1 py-0 bg-blue-100 dark:bg-blue-900/30 rounded text-[10px] font-semibold">{{ cartStore.pricingRuleDiscount.value }}%</span>
+      </span>
+      <span class="text-xs font-semibold">-{{ formatCurrency(cartStore.subtotal - cartStore.netTotal) }}</span>
     </div>
 
     <!-- Individual tax rows -->
@@ -69,14 +79,17 @@ const weightUom = computed(() => {
       <span class="text-base">{{ formatCurrency(cartStore.grandTotal) }}</span>
     </div>
 
-    <!-- Rounding -->
-    <div
-      v-if="cartStore.serverRoundingAdjustment !== 0"
-      class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500"
-    >
-      <span>{{ __('Rounding') }}</span>
-      <span>{{ formatCurrency(cartStore.serverRoundingAdjustment) }}</span>
-    </div>
+    <!-- Rounding + Rounded Total -->
+    <template v-if="cartStore.serverRoundingAdjustment !== 0">
+      <div class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
+        <span>{{ __('Rounding') }}</span>
+        <span>{{ formatCurrency(cartStore.serverRoundingAdjustment) }}</span>
+      </div>
+      <div class="flex justify-between items-center font-bold text-gray-900 dark:text-gray-100">
+        <span class="text-xs">{{ __('Rounded Total') }}</span>
+        <span class="text-base">{{ formatCurrency(cartStore.roundedTotal) }}</span>
+      </div>
+    </template>
 
     <!-- Weight -->
     <div v-if="totalWeight > 0" class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">

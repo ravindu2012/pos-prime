@@ -73,6 +73,8 @@ def create_pos_invoice(
     write_off_amount=0,
     write_off_outstanding_amount_automatically=False,
     debit_to=None,
+    # Store credit
+    store_credit_amount=0,
     # Sales team
     sales_team=None,
 ):
@@ -96,7 +98,7 @@ def create_pos_invoice(
 
     profile = frappe.get_doc("POS Profile", pos_profile)
 
-    if not payments and not profile.allow_partial_payment:
+    if not payments and not getattr(profile, "allow_partial_payment", 0) and not flt(store_credit_amount):
         frappe.throw(_("Payments cannot be empty"))
 
     invoice = frappe.get_doc(
@@ -144,8 +146,8 @@ def create_pos_invoice(
         )
 
     # ERPNext requires at least one payment row — add a zero-amount default
-    # when partial payment is allowed but no payments were provided
-    if not invoice.payments and profile.allow_partial_payment:
+    # when partial payment or store credit is used but no cash payments were provided
+    if not invoice.payments:
         default_mop = profile.payments[0].mode_of_payment if profile.payments else "Cash"
         invoice.append("payments", {"mode_of_payment": default_mop, "amount": 0})
 
@@ -253,21 +255,34 @@ def create_pos_invoice(
                     )
                 )
 
+    # Validate and cap store credit at submit time to prevent double-spend
+    store_credit = flt(store_credit_amount)
+    if store_credit > 0:
+        from pos_prime.api.customer_profile import get_store_credit
+
+        actual = get_store_credit(customer, profile.company)
+        available = flt(actual.get("store_credit", 0))
+        if store_credit > available:
+            store_credit = available
+        # Cap to invoice total
+        invoice_total = flt(invoice.grand_total) or flt(invoice.net_total) or 0
+        if invoice_total > 0:
+            store_credit = min(store_credit, invoice_total)
+
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()
     invoice.insert()
     invoice.submit()
 
-    # For partial payments: ERPNext skips outstanding_amount calculation for
-    # POS Invoices (taxes_and_totals.py only handles Sales/Purchase Invoice).
-    # Compute it manually so the invoice shows as Unpaid instead of Paid.
-    if profile.allow_partial_payment and total_paid < (invoice.rounded_total or invoice.grand_total):
-        outstanding = flt(
-            (invoice.rounded_total or invoice.grand_total) - total_paid - flt(invoice.write_off_amount),
-            invoice.precision("outstanding_amount"),
-        )
-        invoice.db_set("outstanding_amount", outstanding, update_modified=False)
-        invoice.outstanding_amount = outstanding
-        invoice.set_status(update=True)
+    # After submit, set outstanding_amount = store_credit amount.
+    # POS Invoices don't create GL entries until consolidation, so we use
+    # outstanding_amount to track how much store credit was "claimed".
+    # get_store_credit() subtracts this from the GL credit balance.
+    if store_credit > 0:
+        outstanding = flt(store_credit, invoice.precision("outstanding_amount"))
+        if outstanding > 0:
+            invoice.db_set("outstanding_amount", outstanding, update_modified=False)
+            invoice.outstanding_amount = outstanding
+            invoice.set_status(update=True)
 
     return format_invoice_response(invoice)

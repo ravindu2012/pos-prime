@@ -21,9 +21,12 @@ ERPNext's built-in POS is functional but limited. POS Prime is a complete replac
 - **Fuzzy item search** with barcode scanning — typos, partial matches, and out-of-order words all work
 - **Real-time stock validation** so you never sell what you don't have
 - **Loyalty points** — redeem points at checkout with live balance deduction
+- **Store credit** — automatically detects customer credit from returns/overpayments, apply at checkout with double-spend prevention
 - **Partial payments & credit limits** — split pay, pay later, with automatic credit limit enforcement
+- **Pricing rule discounts** — promo badges, strikethrough prices, and discount labels on items
+- **Resizable cart panel** — drag to resize the cart column, persisted across sessions
 - **Self-checkout kiosk mode** for customer-facing touchscreens
-- **Customer pole display** support (screen-based and VFD serial)
+- **Customer pole display** support (screen-based and VFD serial) with discount indicators
 - **Keyboard shortcuts** (F1-F10) for lightning-fast checkout
 - **i18n ready** — all UI strings wrapped for translation, RTL layout support
 - **Works with ERPNext's inventory, taxes, and accounting** - no separate system
@@ -127,8 +130,26 @@ Customer display with phone number entry for loyalty point lookup.
 - Auto-fetch serial numbers (FIFO)
 - Product Bundle support with computed stock availability
 - Cash denomination calculator for opening/closing shifts (21 currencies supported)
+- Resizable cart panel — drag the handle between items and cart to adjust width, persisted in localStorage
+- Collapsible item categories sidebar — toggle visibility, preference saved across sessions
+- Correct rounding support — uses ERPNext's `rounded_total` for payment calculations, change, and display
 - Dark/Light mode follows ERPNext user theme preference
 - Favicon and app logo from Website Settings
+
+### Pricing Rules & Discounts
+- Real-time pricing rule preview — promo badge, strikethrough original price, discount percentage/amount badges
+- Supports all ERPNext pricing rule types: Discount %, Discount Amount, Fixed Rate
+- Transaction-level promo discounts shown in cart summary
+- Customer Pole Display mirrors discount indicators (Promo badge, strikethrough, discount badge)
+
+### Store Credit
+- Automatically detects available store credit from customer returns and overpayments
+- GL-based credit calculation with unconsolidated POS Invoice tracking for double-spend prevention
+- Apply partial or full store credit at checkout with editable amount input
+- Server-side re-validation at submit time — caps to actual available credit
+- Works across multiple POS terminals and shifts for the same company
+- V14: works without any POS Profile setting; V15/V16: requires `Allow Partial Payment` enabled
+- Credit consumption tracked via `outstanding_amount` on unconsolidated POS Invoices
 
 ### Loyalty Points
 - Automatic loyalty point balance display on customer selector and payment dialog
@@ -236,6 +257,16 @@ All 12 layout fields (Section Break, Column Break) are structural and only relev
 | v14 | v14 | Supported |
 | v15 | v15 | Supported |
 | v16 | v16 | Supported |
+
+### Version-Specific Notes
+
+| Feature | v14 | v15 | v16 |
+|---------|-----|-----|-----|
+| Store credit | Works without settings | Requires `Allow Partial Payment` | Requires `Allow Partial Payment` |
+| Partial payments | Supported (no field needed) | Requires `Allow Partial Payment` | Requires `Allow Partial Payment` |
+| Serial/Batch bundles | Legacy fields | `serial_and_batch_bundle` | `serial_and_batch_bundle` |
+| Campaign field | `campaign` | `campaign` | `utm_campaign` |
+| POS Closing invoices | `pos_transactions` | `pos_transactions` | `pos_invoices` |
 
 ---
 

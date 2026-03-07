@@ -38,6 +38,35 @@ const mobileTab = ref<'items' | 'cart'>('items')
 const showReceipt = ref(false)
 const showHeldOrders = ref(false)
 const showReturnDialog = ref(false)
+
+// Resizable cart panel
+const CART_MIN = 300
+const CART_MAX = 600
+const CART_DEFAULT = 380
+const cartWidth = ref(parseInt(localStorage.getItem('pos_cart_width') || '') || CART_DEFAULT)
+let resizing = false
+
+function onResizeStart(e: PointerEvent) {
+  resizing = true
+  const startX = e.clientX
+  const startW = cartWidth.value
+  const target = e.currentTarget as HTMLElement
+  target.setPointerCapture(e.pointerId)
+
+  function onMove(ev: PointerEvent) {
+    if (!resizing) return
+    const delta = startX - ev.clientX // dragging left = wider cart
+    cartWidth.value = Math.min(CART_MAX, Math.max(CART_MIN, startW + delta))
+  }
+  function onUp() {
+    resizing = false
+    localStorage.setItem('pos_cart_width', String(cartWidth.value))
+    target.removeEventListener('pointermove', onMove)
+    target.removeEventListener('pointerup', onUp)
+  }
+  target.addEventListener('pointermove', onMove)
+  target.addEventListener('pointerup', onUp)
+}
 const loading = ref(true)
 
 // Keyboard shortcuts
@@ -113,8 +142,14 @@ onMounted(async () => {
                 qty: item.qty,
                 rate: item.rate,
                 amount: item.amount,
+                is_free_item: item.is_free_item || false,
+                pricing_rules: item.pricing_rules || null,
+                price_list_rate: item.price_list_rate ?? null,
+                discount_percentage: item.discount_percentage || 0,
+                discount_amount: item.discount_amount || 0,
               })),
               subtotal: cartStore.subtotal,
+              netTotal: cartStore.netTotal,
               taxAmount: cartStore.taxAmount,
               grandTotal: cartStore.grandTotal,
               roundedTotal: cartStore.roundedTotal,
@@ -124,6 +159,7 @@ onMounted(async () => {
               companyName: sessionStore.company || null,
               discountValue: cartStore.discountValue,
               discountType: cartStore.discountType,
+              pricingRuleDiscount: cartStore.pricingRuleDiscount,
             },
           })
         } else {
@@ -211,8 +247,14 @@ watch(
           qty: item.qty,
           rate: item.rate,
           amount: item.amount,
+          is_free_item: item.is_free_item || false,
+          pricing_rules: item.pricing_rules || null,
+          price_list_rate: item.price_list_rate ?? null,
+          discount_percentage: item.discount_percentage || 0,
+          discount_amount: item.discount_amount || 0,
         })),
         subtotal: cartStore.subtotal,
+        netTotal: cartStore.netTotal,
         taxAmount: cartStore.taxAmount,
         grandTotal: cartStore.grandTotal,
         roundedTotal: cartStore.roundedTotal,
@@ -222,6 +264,7 @@ watch(
         companyName: sessionStore.company || null,
         discountValue: cartStore.discountValue,
         discountType: cartStore.discountType,
+        pricingRuleDiscount: cartStore.pricingRuleDiscount,
       },
     })
     // VFD: show last added item + total
@@ -411,10 +454,20 @@ function onReturnCompleted() {
         <ItemGrid />
       </div>
 
+      <!-- Resize handle -->
+      <div
+        class="hidden sm:flex items-center justify-center cursor-col-resize shrink-0 group select-none"
+        style="width: 6px;"
+        @pointerdown.prevent="onResizeStart"
+      >
+        <div class="w-0.5 h-8 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-400 group-active:bg-blue-500 transition-colors" />
+      </div>
+
       <!-- Cart panel -->
       <div
-        class="w-full sm:w-[340px] lg:w-[380px] shrink-0 flex flex-col overflow-hidden"
+        class="shrink-0 flex flex-col overflow-hidden max-sm:!w-full"
         :class="{ 'hidden sm:flex': mobileTab === 'items' }"
+        :style="{ width: `${cartWidth}px` }"
       >
         <Cart @hold-order="holdOrder" />
       </div>

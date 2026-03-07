@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 from frappe.utils import nowdate, nowtime
 import json
+import erpnext
 from pos_prime.api._utils import validate_pos_access
 
 
@@ -148,6 +149,9 @@ def get_pos_profile(pos_profile):
     # v14: field doesn't exist at all — default to False (pre-fill enabled)
     if "disable_grand_total_to_default_mop" not in result:
         result["disable_grand_total_to_default_mop"] = False
+
+    # Expose ERPNext major version so frontend can toggle version-specific features
+    result["erpnext_version"] = int(erpnext.__version__.split(".")[0])
 
     return result
 

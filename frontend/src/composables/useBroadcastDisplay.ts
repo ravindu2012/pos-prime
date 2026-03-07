@@ -5,11 +5,17 @@ export interface DisplayCartItem {
   qty: number
   rate: number
   amount: number
+  is_free_item?: boolean
+  pricing_rules?: string | null
+  price_list_rate?: number | null
+  discount_percentage?: number
+  discount_amount?: number
 }
 
 export interface CartUpdatePayload {
   items: DisplayCartItem[]
   subtotal: number
+  netTotal: number
   taxAmount: number
   grandTotal: number
   roundedTotal: number
@@ -19,6 +25,7 @@ export interface CartUpdatePayload {
   companyName: string | null
   discountValue: number
   discountType: 'percentage' | 'amount'
+  pricingRuleDiscount?: { type: 'percentage' | 'amount'; value: number } | null
 }
 
 export interface PaymentStartPayload {

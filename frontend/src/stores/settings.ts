@@ -23,6 +23,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const writeOffLimit = computed(() => posProfile.value?.write_off_limit ?? 0)
   const accountForChangeAmount = computed(() => posProfile.value?.account_for_change_amount ?? null)
   const currency = computed(() => posProfile.value?.currency ?? 'USD')
+  const erpnextVersion = computed(() => (posProfile.value as any)?.erpnext_version ?? 15)
 
   const paymentMethods = computed(() => posProfile.value?.payments ?? [])
   const defaultPaymentMethod = computed(() =>
@@ -87,6 +88,7 @@ export const useSettingsStore = defineStore('settings', () => {
     writeOffLimit,
     accountForChangeAmount,
     currency,
+    erpnextVersion,
     paymentMethods,
     defaultPaymentMethod,
     customerGroups,

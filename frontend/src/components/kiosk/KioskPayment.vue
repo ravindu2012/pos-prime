@@ -28,9 +28,21 @@ const cartStore = useCartStore()
     <div class="w-full max-w-lg px-8 text-center">
       <!-- Amount -->
       <p class="mb-3 text-lg font-medium" style="color: rgba(255,255,255,0.4);">Total Amount</p>
-      <p class="mb-14 text-6xl font-bold text-white" style="letter-spacing: -0.03em;">
+      <p class="text-6xl font-bold text-white" style="letter-spacing: -0.03em;">
         {{ formatCurrency(cartStore.roundedTotal ?? cartStore.grandTotal) }}
       </p>
+      <!-- Discount summary -->
+      <div v-if="cartStore.pricingRuleDiscount || cartStore.items.some(i => i.is_free_item)" class="mt-3 mb-14 flex items-center justify-center gap-3 flex-wrap">
+        <span v-if="cartStore.pricingRuleDiscount" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style="background: rgba(96,165,250,0.12); color: #60a5fa;">
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+          {{ cartStore.pricingRuleDiscount.type === 'percentage' ? cartStore.pricingRuleDiscount.value + '% discount applied' : 'Discount applied' }}
+        </span>
+        <span v-if="cartStore.items.some(i => i.is_free_item)" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style="background: rgba(22,163,74,0.12); color: #4ade80;">
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+          Free items included
+        </span>
+      </div>
+      <div v-else class="mb-14" />
 
       <!-- Error message -->
       <div

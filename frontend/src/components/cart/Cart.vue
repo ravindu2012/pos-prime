@@ -243,7 +243,7 @@ const emit = defineEmits<{
             : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
         >
           <CreditCard :size="16" />
-          {{ __('Pay') }} {{ cartStore.items.length > 0 ? formatCurrency(cartStore.grandTotal) : '' }}
+          {{ __('Pay') }} {{ cartStore.items.length > 0 ? formatCurrency(cartStore.roundedTotal) : '' }}
         </button>
       </div>
     </div>

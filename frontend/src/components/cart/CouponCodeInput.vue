@@ -1,22 +1,40 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { call } from 'frappe-ui'
 import { useCartStore } from '@/stores/cart'
+import { useCustomerStore } from '@/stores/customer'
 import { Tag, X, Check, Loader2 } from 'lucide-vue-next'
 
 const cartStore = useCartStore()
+const customerStore = useCustomerStore()
 const input = ref('')
 const applying = ref(false)
 const error = ref('')
+const displayCode = ref('')
 
 async function applyCoupon() {
-  if (!input.value.trim()) return
+  const code = input.value.trim()
+  if (!code) return
   error.value = ''
   applying.value = true
   try {
-    cartStore.setCouponCode(input.value.trim())
+    const result = await call('pos_prime.api.taxes.validate_coupon_code', {
+      coupon_code: code,
+      customer: customerStore.customer?.name || undefined,
+    })
+    // ERPNext expects the document name, not the coupon_code field
+    cartStore.setCouponCode(result.name)
+    displayCode.value = result.coupon_code || code
     input.value = ''
   } catch (e: any) {
-    error.value = e.message || __('Invalid coupon code')
+    const msg = e?.messages?.[0] || e?.message || e?.exc || ''
+    let parsed = msg
+    try {
+      const arr = JSON.parse(msg)
+      if (Array.isArray(arr) && arr.length) parsed = arr[0]
+    } catch { /* not JSON */ }
+    parsed = String(parsed).replace(/<[^>]*>/g, '').trim()
+    error.value = parsed || __('Invalid coupon code')
   } finally {
     applying.value = false
   }
@@ -24,6 +42,7 @@ async function applyCoupon() {
 
 function removeCoupon() {
   cartStore.setCouponCode(null)
+  displayCode.value = ''
   error.value = ''
 }
 </script>
@@ -35,7 +54,7 @@ function removeCoupon() {
       <div class="w-5 h-5 bg-purple-100 dark:bg-purple-900/40 rounded flex items-center justify-center shrink-0">
         <Tag :size="10" class="text-purple-600 dark:text-purple-400" />
       </div>
-      <span class="text-xs font-bold text-purple-700 dark:text-purple-300 flex-1">{{ cartStore.couponCode }}</span>
+      <span class="text-xs font-bold text-purple-700 dark:text-purple-300 flex-1">{{ displayCode || cartStore.couponCode }}</span>
       <button @click="removeCoupon" class="w-5 h-5 rounded flex items-center justify-center text-purple-400 dark:text-purple-500 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
         <X :size="12" />
       </button>

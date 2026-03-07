@@ -7,6 +7,8 @@ app_license = "mit"
 
 required_apps = ["erpnext"]
 
+app_include_js = "/assets/pos_prime/js/pos_prime.js"
+
 add_to_apps_screen = [
 	{
 		"name": "pos_prime",

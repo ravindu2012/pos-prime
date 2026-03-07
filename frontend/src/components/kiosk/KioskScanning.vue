@@ -161,12 +161,22 @@ defineExpose({ showScannedFeedback, showScanError })
 
               <!-- Info -->
               <div class="flex-1 min-w-0">
-                <p class="text-base font-semibold text-white truncate">{{ item.item_name }}</p>
-                <p class="text-sm" style="color: rgba(255,255,255,0.35);">{{ formatCurrency(item.rate) }} each</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-base font-semibold text-white truncate">{{ item.item_name }}</p>
+                  <span v-if="item.is_free_item" class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style="background: rgba(22,163,74,0.2); color: #4ade80;">Free</span>
+                  <span v-else-if="item.pricing_rules" class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style="background: rgba(96,165,250,0.15); color: #60a5fa;">Promo</span>
+                </div>
+                <div v-if="item.is_free_item" class="text-sm" style="color: rgba(255,255,255,0.35);">Promotional item</div>
+                <div v-else class="flex items-center gap-2 text-sm" style="color: rgba(255,255,255,0.35);">
+                  <span v-if="item.price_list_rate && item.price_list_rate !== item.rate" class="line-through" style="color: rgba(255,255,255,0.2);">{{ formatCurrency(item.price_list_rate) }}</span>
+                  <span>{{ formatCurrency(item.rate) }} each</span>
+                  <span v-if="item.discount_percentage > 0" class="rounded px-1.5 py-0.5 text-[10px] font-bold" style="background: rgba(251,146,60,0.15); color: #fb923c;">-{{ item.discount_percentage }}%</span>
+                  <span v-else-if="item.discount_amount > 0" class="rounded px-1.5 py-0.5 text-[10px] font-bold" style="background: rgba(251,146,60,0.15); color: #fb923c;">-{{ formatCurrency(item.discount_amount) }}</span>
+                </div>
               </div>
 
               <!-- Qty controls -->
-              <div class="flex items-center gap-2">
+              <div v-if="!item.is_free_item" class="flex items-center gap-2">
                 <button
                   class="flex h-11 w-11 items-center justify-center rounded-full text-lg font-bold text-white active:scale-90"
                   style="background: rgba(255,255,255,0.08);"
@@ -179,12 +189,16 @@ defineExpose({ showScannedFeedback, showScanError })
                   @click="incrementQty(index)"
                 >+</button>
               </div>
+              <div v-else class="flex items-center">
+                <span class="text-lg font-bold" style="color: rgba(255,255,255,0.3);">×{{ item.qty }}</span>
+              </div>
 
               <!-- Line total -->
-              <p class="w-24 text-right text-lg font-bold text-white">{{ formatCurrency(item.amount) }}</p>
+              <p class="w-24 text-right text-lg font-bold" :style="item.is_free_item ? 'color: #4ade80;' : 'color: white;'">{{ item.is_free_item ? 'FREE' : formatCurrency(item.amount) }}</p>
 
               <!-- Remove -->
               <button
+                v-if="!item.is_free_item"
                 class="flex h-10 w-10 items-center justify-center rounded-lg active:scale-90"
                 style="color: #f87171;"
                 @click="removeItem(index)"
@@ -193,6 +207,7 @@ defineExpose({ showScannedFeedback, showScanError })
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
+              <div v-else class="w-10" />
             </div>
           </div>
         </div>

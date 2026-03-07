@@ -51,7 +51,13 @@ def calculate_taxes(
             invoice.discount_amount = safe_float(discount_amount)
 
         if coupon_code:
-            invoice.coupon_code = coupon_code
+            # ERPNext's coupon_code field is a Link to Coupon Code doctype (expects
+            # document name, e.g. "Save 20 Percent").  The frontend sends the
+            # user-facing code (e.g. "SAVE20").  Resolve to the document name.
+            coupon_name = frappe.db.get_value(
+                "Coupon Code", {"coupon_code": coupon_code}, "name"
+            )
+            invoice.coupon_code = coupon_name or coupon_code
 
         # Tax category from profile
         if profile.tax_category:
@@ -87,6 +93,30 @@ def calculate_taxes(
         # Use ERPNext's built-in tax calculation
         invoice.set_missing_values()
         invoice.calculate_taxes_and_totals()
+
+        # Apply transaction-level pricing rules (e.g. "Apply On: Transaction")
+        # These aren't handled by set_missing_values — need explicit call
+        if not profile.ignore_pricing_rule:
+            from erpnext.accounts.doctype.pricing_rule.utils import (
+                apply_pricing_rule_on_transaction,
+            )
+
+            apply_pricing_rule_on_transaction(invoice)
+
+            # ERPNext bug: apply_pricing_rule_on_transaction doesn't check
+            # coupon_code_based for product discounts (free items). Remove
+            # free items added by coupon-code-based rules when no coupon is provided.
+            if not coupon_code:
+                to_remove = []
+                for item in invoice.items:
+                    if getattr(item, "is_free_item", 0) and getattr(item, "pricing_rules", None):
+                        pr_name = item.pricing_rules.strip('"')
+                        if frappe.db.get_value("Pricing Rule", pr_name, "coupon_code_based"):
+                            to_remove.append(item)
+                for item in to_remove:
+                    invoice.remove(item)
+                if to_remove:
+                    invoice.calculate_taxes_and_totals()
 
         # Build tax rows
         taxes = []
@@ -142,9 +172,69 @@ def calculate_taxes(
             "rounding_adjustment": invoice.rounding_adjustment,
             "discount_amount": invoice.discount_amount,
             "additional_discount_percentage": invoice.additional_discount_percentage,
+            "apply_discount_on": invoice.apply_discount_on,
             "pricing_rules": pricing_rules,
             "free_items": free_items,
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "POS Prime: calculate_taxes failed")
         frappe.throw(_("Failed to calculate taxes: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def validate_coupon_code(coupon_code, customer=None):
+    """Validate a coupon code and return its details if valid.
+
+    Matches against the `coupon_code` field (the code the user enters),
+    not the document `name` (which is based on `coupon_name`).
+    """
+    if not coupon_code:
+        frappe.throw(_("Coupon code is required"))
+
+    coupon = frappe.db.get_value(
+        "Coupon Code",
+        {"coupon_code": coupon_code},
+        [
+            "name",
+            "coupon_name",
+            "coupon_code",
+            "coupon_type",
+            "pricing_rule",
+            "valid_from",
+            "valid_upto",
+            "used",
+            "maximum_use",
+            "customer",
+        ],
+        as_dict=True,
+    )
+
+    if not coupon:
+        frappe.throw(_("Invalid coupon code"))
+
+    today = frappe.utils.today()
+    if coupon.valid_from and frappe.utils.getdate(coupon.valid_from) > frappe.utils.getdate(today):
+        frappe.throw(_("Coupon code is not yet valid"))
+
+    if coupon.valid_upto and frappe.utils.getdate(coupon.valid_upto) < frappe.utils.getdate(today):
+        frappe.throw(_("Coupon code has expired"))
+
+    if coupon.maximum_use and coupon.used >= coupon.maximum_use:
+        frappe.throw(_("Coupon code usage limit exceeded"))
+
+    if coupon.customer and customer and coupon.customer != customer:
+        frappe.throw(_("This coupon is not valid for the selected customer"))
+
+    # Check that the linked pricing rule exists and is active
+    if coupon.pricing_rule:
+        pr_disabled = frappe.db.get_value("Pricing Rule", coupon.pricing_rule, "disable")
+        if pr_disabled:
+            frappe.throw(_("The pricing rule linked to this coupon is disabled"))
+
+    return {
+        "name": coupon.name,
+        "coupon_code": coupon.coupon_code,
+        "coupon_name": coupon.coupon_name,
+        "coupon_type": coupon.coupon_type,
+        "pricing_rule": coupon.pricing_rule,
+    }

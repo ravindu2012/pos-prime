@@ -88,12 +88,22 @@ function removeItem(index: number) {
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <p class="text-lg font-semibold text-white truncate">{{ item.item_name }}</p>
-            <p class="text-sm" style="color: rgba(255,255,255,0.35);">{{ formatCurrency(item.rate) }} each</p>
+            <div class="flex items-center gap-2">
+              <p class="text-lg font-semibold text-white truncate">{{ item.item_name }}</p>
+              <span v-if="item.is_free_item" class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase" style="background: rgba(22,163,74,0.2); color: #4ade80;">Free</span>
+              <span v-else-if="item.pricing_rules" class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase" style="background: rgba(96,165,250,0.15); color: #60a5fa;">Promo</span>
+            </div>
+            <div v-if="item.is_free_item" class="text-sm" style="color: rgba(255,255,255,0.35);">Promotional item</div>
+            <div v-else class="flex items-center gap-2 text-sm" style="color: rgba(255,255,255,0.35);">
+              <span v-if="item.price_list_rate && item.price_list_rate !== item.rate" class="line-through" style="color: rgba(255,255,255,0.2);">{{ formatCurrency(item.price_list_rate) }}</span>
+              <span>{{ formatCurrency(item.rate) }} each</span>
+              <span v-if="item.discount_percentage > 0" class="rounded px-1.5 py-0.5 text-[10px] font-bold" style="background: rgba(251,146,60,0.15); color: #fb923c;">-{{ item.discount_percentage }}%</span>
+              <span v-else-if="item.discount_amount > 0" class="rounded px-1.5 py-0.5 text-[10px] font-bold" style="background: rgba(251,146,60,0.15); color: #fb923c;">-{{ formatCurrency(item.discount_amount) }}</span>
+            </div>
           </div>
 
           <!-- Qty controls -->
-          <div class="flex items-center gap-3">
+          <div v-if="!item.is_free_item" class="flex items-center gap-3">
             <button
               class="flex h-12 w-12 items-center justify-center rounded-full text-xl font-bold text-white active:scale-90"
               style="background: rgba(255,255,255,0.08);"
@@ -106,12 +116,16 @@ function removeItem(index: number) {
               @click="incrementQty(index)"
             >+</button>
           </div>
+          <div v-else class="flex items-center">
+            <span class="text-xl font-bold" style="color: rgba(255,255,255,0.3);">×{{ item.qty }}</span>
+          </div>
 
           <!-- Line total -->
-          <p class="w-28 text-right text-xl font-bold text-white">{{ formatCurrency(item.amount) }}</p>
+          <p class="w-28 text-right text-xl font-bold" :style="item.is_free_item ? 'color: #4ade80;' : 'color: white;'">{{ item.is_free_item ? 'FREE' : formatCurrency(item.amount) }}</p>
 
           <!-- Remove -->
           <button
+            v-if="!item.is_free_item"
             class="flex h-11 w-11 items-center justify-center rounded-xl active:scale-90"
             style="background: rgba(248,113,113,0.1);"
             @click="removeItem(index)"
@@ -120,6 +134,7 @@ function removeItem(index: number) {
               <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
             </svg>
           </button>
+          <div v-else class="w-11" />
         </div>
       </div>
     </div>
@@ -132,6 +147,10 @@ function removeItem(index: number) {
           <div class="flex justify-between text-base" style="color: rgba(255,255,255,0.4);">
             <span>Subtotal</span>
             <span class="text-white/70">{{ formatCurrency(cartStore.subtotal) }}</span>
+          </div>
+          <div v-if="cartStore.pricingRuleDiscount" class="flex justify-between text-base" style="color: #4ade80;">
+            <span>Promo Discount{{ cartStore.pricingRuleDiscount.type === 'percentage' ? ` (${cartStore.pricingRuleDiscount.value}%)` : '' }}</span>
+            <span>-{{ formatCurrency(cartStore.subtotal - cartStore.netTotal) }}</span>
           </div>
           <div v-if="cartStore.taxAmount > 0" class="flex justify-between text-base" style="color: rgba(255,255,255,0.4);">
             <span>Tax</span>

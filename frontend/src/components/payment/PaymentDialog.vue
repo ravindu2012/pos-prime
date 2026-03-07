@@ -7,7 +7,7 @@ import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
 import { useTouchDevice } from '@/composables/useTouchDevice'
-import { X, Check, Banknote, CreditCard, Wallet, Coins, Award, Eraser, Delete, Loader2, AlertTriangle } from 'lucide-vue-next'
+import { X, Check, Banknote, CreditCard, Wallet, Coins, Award, Eraser, Delete, Loader2, AlertTriangle, BadgeDollarSign } from 'lucide-vue-next'
 
 const { isTouchDevice } = useTouchDevice()
 
@@ -24,6 +24,25 @@ const applyWriteOff = ref(false)
 const redeemLoyalty = ref(false)
 const loyaltyPointsToRedeem = ref(0)
 const loyaltyApplied = ref(false)
+
+// Store credit
+const applyStoreCredit = ref(false)
+const storeCreditAmount = ref(0)
+
+watch(applyStoreCredit, (on) => {
+  if (on && customerStore.storeCredit > 0) {
+    // Default: min of available credit and remaining grand total
+    const maxApplicable = Math.min(customerStore.storeCredit, cartStore.roundedTotal)
+    storeCreditAmount.value = Math.round(maxApplicable * 100) / 100
+  } else if (!on) {
+    storeCreditAmount.value = 0
+  }
+})
+
+const storeCreditAppliedAmount = computed(() => {
+  if (!applyStoreCredit.value || storeCreditAmount.value <= 0) return 0
+  return Math.min(storeCreditAmount.value, customerStore.storeCredit, cartStore.roundedTotal)
+})
 
 // Auto-populate and apply loyalty points when checkbox is toggled on
 watch(redeemLoyalty, (on) => {
@@ -48,7 +67,7 @@ const loyaltyRedemptionAmount = computed(() => {
   const cf = customerStore.loyaltyData?.conversion_factor || 0
   return Math.min(
     loyaltyPointsToRedeem.value * cf,
-    cartStore.grandTotal
+    cartStore.roundedTotal
   )
 })
 
@@ -68,7 +87,7 @@ const remainingCreditLimit = computed(() => {
 onMounted(() => {
   paymentStore.initializePayments(
     settingsStore.paymentMethods,
-    cartStore.grandTotal,
+    cartStore.roundedTotal,
     settingsStore.disableGrandTotalToDefaultMop
   )
 })
@@ -99,7 +118,8 @@ watch(() => paymentStore.activePaymentMethod, () => {
 })
 
 const effectiveGrandTotal = computed(() => {
-  let total = cartStore.grandTotal
+  let total = cartStore.roundedTotal
+  if (storeCreditAppliedAmount.value > 0) total -= storeCreditAppliedAmount.value
   if (loyaltyRedemptionAmount.value > 0) total -= loyaltyRedemptionAmount.value
   if (applyWriteOff.value && possibleWriteOff.value > 0) total -= possibleWriteOff.value
   return Math.max(0, total)
@@ -108,7 +128,7 @@ const effectiveGrandTotal = computed(() => {
 const change = computed(() => Math.round(Math.max(0, paymentStore.totalPaid - effectiveGrandTotal.value) * 100) / 100)
 const remaining = computed(() => Math.round(Math.max(0, effectiveGrandTotal.value - paymentStore.totalPaid) * 100) / 100)
 const possibleWriteOff = computed(() => {
-  const baseRemaining = Math.max(0, cartStore.grandTotal - loyaltyRedemptionAmount.value - paymentStore.totalPaid)
+  const baseRemaining = Math.max(0, cartStore.roundedTotal - loyaltyRedemptionAmount.value - paymentStore.totalPaid)
   if (baseRemaining > 0 && baseRemaining <= settingsStore.writeOffLimit) return baseRemaining
   return 0
 })
@@ -146,7 +166,7 @@ const isCashMethod = computed(() => {
 })
 
 const cashShortcuts = computed(() => {
-  const gt = cartStore.grandTotal
+  const gt = effectiveGrandTotal.value
   if (gt <= 0) return []
   const values = [
     Math.ceil(gt),
@@ -267,8 +287,13 @@ async function doSubmit() {
       items: itemsPayload,
       payments: activePayments,
       taxes: settingsStore.posProfile?.taxes_and_charges || undefined,
-      additional_discount_percentage: cartStore.additionalDiscountPercentage || undefined,
-      discount_amount: cartStore.additionalDiscountAmount || undefined,
+      additional_discount_percentage: cartStore.pricingRuleDiscount?.type === 'percentage'
+        ? cartStore.pricingRuleDiscount.value
+        : cartStore.additionalDiscountPercentage || undefined,
+      discount_amount: cartStore.pricingRuleDiscount?.type === 'amount'
+        ? cartStore.pricingRuleDiscount.value
+        : cartStore.additionalDiscountAmount || undefined,
+      apply_discount_on: cartStore.applyDiscountOn,
       coupon_code: cartStore.couponCode || undefined,
       ...(redeemLoyalty.value && loyaltyPointsToRedeem.value > 0 && customerStore.loyaltyData
         ? {
@@ -280,6 +305,7 @@ async function doSubmit() {
           }
         : {}),
       ...(writeOff > 0 ? { write_off_amount: writeOff } : {}),
+      ...(storeCreditAppliedAmount.value > 0 ? { store_credit_amount: storeCreditAppliedAmount.value } : {}),
       ...Object.fromEntries(
         Object.entries(opts).filter(([_, v]) => v != null && v !== '' && v !== false)
       ),
@@ -341,9 +367,10 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 <div class="text-3xl font-bold tracking-tight">
                   {{ formatCurrency(effectiveGrandTotal) }}
                 </div>
-                <div v-if="loyaltyRedemptionAmount > 0" class="text-[10px] text-violet-300 mt-0.5">
-                  <span class="line-through text-white/30 mr-1">{{ formatCurrency(cartStore.grandTotal) }}</span>
-                  <span>-{{ formatCurrency(loyaltyRedemptionAmount) }} {{ __('loyalty') }}</span>
+                <div v-if="storeCreditAppliedAmount > 0 || loyaltyRedemptionAmount > 0" class="text-[10px] mt-0.5">
+                  <span class="line-through text-white/30 mr-1">{{ formatCurrency(cartStore.roundedTotal) }}</span>
+                  <span v-if="storeCreditAppliedAmount > 0" class="text-emerald-300 mr-1">-{{ formatCurrency(storeCreditAppliedAmount) }} {{ __('credit') }}</span>
+                  <span v-if="loyaltyRedemptionAmount > 0" class="text-violet-300">-{{ formatCurrency(loyaltyRedemptionAmount) }} {{ __('loyalty') }}</span>
                 </div>
               </div>
 
@@ -493,6 +520,63 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               </button>
             </div>
 
+            <!-- Store Credit -->
+            <div
+              v-if="customerStore.storeCredit > 0"
+              class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3"
+            >
+              <template v-if="settingsStore.allowPartialPayment || settingsStore.erpnextVersion < 15">
+                <label class="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="applyStoreCredit"
+                    class="w-4 h-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                      <BadgeDollarSign :size="14" />
+                      {{ __('Apply Store Credit') }}
+                    </div>
+                    <div class="text-[10px] text-emerald-500 dark:text-emerald-400 mt-0.5">
+                      {{ formatCurrency(customerStore.storeCredit) }} {{ __('available') }}
+                    </div>
+                  </div>
+                </label>
+                <div v-if="applyStoreCredit" class="mt-2.5 pl-6 space-y-2">
+                  <div class="flex items-center gap-2">
+                    <label class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0">{{ __('Amount') }}:</label>
+                    <input
+                      v-model.number="storeCreditAmount"
+                      type="number"
+                      step="any"
+                      :min="0"
+                      :max="Math.min(customerStore.storeCredit, cartStore.roundedTotal)"
+                      class="flex-1 rounded-lg border border-emerald-200 dark:border-emerald-700 px-2.5 py-1.5 text-xs text-right focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                  <div class="flex items-center justify-between text-[10px]">
+                    <span class="text-emerald-600 dark:text-emerald-400">
+                      {{ __('Applied to this invoice') }}
+                    </span>
+                    <span class="font-bold text-emerald-700 dark:text-emerald-300">
+                      -{{ formatCurrency(storeCreditAppliedAmount) }}
+                    </span>
+                  </div>
+                </div>
+              </template>
+              <div v-else class="flex items-center gap-2">
+                <BadgeDollarSign :size="14" class="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div>
+                  <div class="text-xs text-emerald-800 dark:text-emerald-300">
+                    {{ formatCurrency(customerStore.storeCredit) }} {{ __('store credit available') }}
+                  </div>
+                  <div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    {{ __('Enable "Allow Partial Payment" in POS Profile to use store credit') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Loyalty Points -->
             <div
               v-if="customerStore.loyaltyProgram && customerStore.loyaltyPoints > 0"
@@ -570,8 +654,8 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
             </div>
 
             <!-- Payment Summary -->
-            <div v-if="paymentStore.payments.filter(p => p.amount > 0).length > 1" class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-1.5">
-              <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-1">{{ __('Split Payment') }}</div>
+            <div v-if="paymentStore.payments.filter(p => p.amount > 0).length > 1 || storeCreditAppliedAmount > 0" class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-1.5">
+              <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-1">{{ __('Payment Summary') }}</div>
               <div
                 v-for="pm in paymentStore.payments.filter(p => p.amount > 0)"
                 :key="pm.mode_of_payment"
@@ -583,9 +667,16 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 </span>
                 <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatCurrency(pm.amount) }}</span>
               </div>
+              <div v-if="storeCreditAppliedAmount > 0" class="flex items-center justify-between text-xs">
+                <span class="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <BadgeDollarSign :size="12" />
+                  {{ __('Store Credit') }}
+                </span>
+                <span class="font-semibold text-emerald-700 dark:text-emerald-300">{{ formatCurrency(storeCreditAppliedAmount) }}</span>
+              </div>
               <div class="border-t border-gray-200 dark:border-gray-700 pt-1.5 flex items-center justify-between text-xs font-bold">
                 <span class="text-gray-700 dark:text-gray-300">{{ __('Total Paid') }}</span>
-                <span class="text-blue-600 dark:text-blue-400">{{ formatCurrency(paymentStore.totalPaid) }}</span>
+                <span class="text-blue-600 dark:text-blue-400">{{ formatCurrency(paymentStore.totalPaid + storeCreditAppliedAmount) }}</span>
               </div>
             </div>
 
@@ -641,7 +732,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
         </div>
         <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">{{ __('Partial Payment') }}</h4>
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-          {{ __('Paid') }}: {{ formatCurrency(paymentStore.totalPaid) }} / {{ formatCurrency(cartStore.grandTotal) }}
+          {{ __('Paid') }}: {{ formatCurrency(paymentStore.totalPaid) }} / {{ formatCurrency(cartStore.roundedTotal) }}
         </p>
         <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-4">
           {{ __('Outstanding') }}: {{ formatCurrency(newOutstanding) }}

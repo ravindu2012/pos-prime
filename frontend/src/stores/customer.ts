@@ -23,6 +23,7 @@ export const useCustomerStore = defineStore('customer', () => {
   const selectedContact = ref<string | null>(null)
   const outstanding = ref(0)
   const creditLimit = ref(0)
+  const storeCredit = ref(0)
 
   const loyaltyProgram = computed(() => loyaltyData.value?.loyalty_program ?? null)
   const loyaltyPoints = computed(() => loyaltyData.value?.loyalty_points ?? 0)
@@ -102,19 +103,28 @@ export const useCustomerStore = defineStore('customer', () => {
         // Ignore address/contact fetch errors
       }
 
-      // Fetch outstanding and credit limit
+      // Fetch outstanding, credit limit, and store credit
       try {
         const { usePosSessionStore } = await import('@/stores/posSession')
         const session = usePosSessionStore()
-        const outstandingData = await call('pos_prime.api.customer_profile.get_customer_outstanding', {
-          customer: customerName,
-          company: session.company || '',
-        })
+        const company = session.company || ''
+        const [outstandingData, storeCreditData] = await Promise.all([
+          call('pos_prime.api.customer_profile.get_customer_outstanding', {
+            customer: customerName,
+            company,
+          }),
+          call('pos_prime.api.customer_profile.get_store_credit', {
+            customer: customerName,
+            company,
+          }),
+        ])
         outstanding.value = outstandingData?.outstanding || 0
         creditLimit.value = outstandingData?.credit_limit || 0
+        storeCredit.value = storeCreditData?.store_credit || 0
       } catch {
         outstanding.value = 0
         creditLimit.value = 0
+        storeCredit.value = 0
       }
     } finally {
       loading.value = false
@@ -161,6 +171,7 @@ export const useCustomerStore = defineStore('customer', () => {
     selectedContact.value = null
     outstanding.value = 0
     creditLimit.value = 0
+    storeCredit.value = 0
     loading.value = false
   }
 
@@ -175,6 +186,7 @@ export const useCustomerStore = defineStore('customer', () => {
     selectedContact,
     outstanding,
     creditLimit,
+    storeCredit,
     loyaltyProgram,
     loyaltyPoints,
     maxRedeemableAmount,
