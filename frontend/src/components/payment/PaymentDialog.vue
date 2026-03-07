@@ -68,14 +68,36 @@ const paidPercentage = computed(() => {
   return Math.min(100, (paymentStore.totalPaid / cartStore.grandTotal) * 100)
 })
 
+const isPartialPayment = computed(() => {
+  const effectiveGrandTotal = applyWriteOff.value
+    ? cartStore.grandTotal - possibleWriteOff.value
+    : cartStore.grandTotal
+  return paymentStore.totalPaid < effectiveGrandTotal
+})
+
+const newOutstanding = computed(() => {
+  const effectiveGrandTotal = applyWriteOff.value
+    ? cartStore.grandTotal - possibleWriteOff.value
+    : cartStore.grandTotal
+  return Math.max(0, effectiveGrandTotal - paymentStore.totalPaid)
+})
+
+const wouldExceedCreditLimit = computed(() => {
+  if (!customerStore.creditLimit || customerStore.creditLimit <= 0) return false
+  return (customerStore.outstanding + newOutstanding.value) > customerStore.creditLimit
+})
+
 const canSubmit = computed(() => {
   if (paymentStore.submitting) return false
-  if (settingsStore.allowPartialPayment) return paymentStore.totalPaid > 0
+  if (wouldExceedCreditLimit.value && isPartialPayment.value) return false
+  if (settingsStore.allowPartialPayment) return true
   const effectiveGrandTotal = applyWriteOff.value
     ? cartStore.grandTotal - possibleWriteOff.value
     : cartStore.grandTotal
   return paymentStore.totalPaid >= effectiveGrandTotal
 })
+
+const showPartialConfirm = ref(false)
 
 const isCashMethod = computed(() => {
   const mode = paymentStore.activePaymentMethod.toLowerCase()
@@ -143,19 +165,35 @@ function setCashAmount(amount: number) {
   paymentStore.setPaymentAmount(paymentStore.activePaymentMethod, amount)
 }
 
-async function submit() {
+function handleSubmit() {
   error.value = ''
   errorMessages.value = []
   if (!customerStore.customer) {
     error.value = __('Please select a customer')
     return
   }
+
+  // Credit limit check
+  if (wouldExceedCreditLimit.value && isPartialPayment.value) {
+    error.value = __('This transaction would exceed the customer credit limit')
+    return
+  }
+
+  // Show confirmation for partial payments
+  if (settingsStore.allowPartialPayment && isPartialPayment.value) {
+    showPartialConfirm.value = true
+    return
+  }
+
+  doSubmit()
+}
+
+async function doSubmit() {
+  showPartialConfirm.value = false
+  error.value = ''
+  errorMessages.value = []
   try {
     const activePayments = paymentStore.payments.filter((p) => p.amount > 0)
-    if (activePayments.length === 0) {
-      error.value = __('Please enter a payment amount')
-      return
-    }
 
     const writeOff = applyWriteOff.value ? possibleWriteOff.value : 0
 
@@ -484,12 +522,28 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               <div class="text-[10px] text-green-500 dark:text-green-400 uppercase tracking-wider font-semibold mb-0.5">{{ __('Change Due') }}</div>
               <div class="text-xl font-bold text-green-700 dark:text-green-400">{{ formatCurrency(change) }}</div>
             </div>
+
+            <!-- Credit limit warning -->
+            <div
+              v-if="wouldExceedCreditLimit && isPartialPayment"
+              class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-start gap-2"
+            >
+              <AlertTriangle :size="16" class="text-red-500 shrink-0 mt-0.5" />
+              <div class="text-xs text-red-700 dark:text-red-400">
+                <div class="font-semibold">{{ __('Credit limit would be exceeded') }}</div>
+                <div class="mt-0.5 text-red-500 dark:text-red-400/80">
+                  {{ __('Outstanding') }}: {{ formatCurrency(customerStore.outstanding) }} + {{ formatCurrency(newOutstanding) }}
+                  = {{ formatCurrency(customerStore.outstanding + newOutstanding) }}
+                  / {{ formatCurrency(customerStore.creditLimit) }}
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Fixed Submit Button -->
           <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
             <button
-              @click="submit"
+              @click="handleSubmit"
               :disabled="!canSubmit"
               class="w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
               :class="canSubmit
@@ -505,6 +559,37 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
         </div>
       </div>
     </Transition>
+
+    <!-- Partial Payment Confirmation -->
+    <div v-if="showPartialConfirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40" @click="showPartialConfirm = false" />
+      <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-black/30 w-full max-w-xs p-5 text-center">
+        <div class="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-3">
+          <AlertTriangle :size="20" class="text-amber-500" />
+        </div>
+        <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">{{ __('Partial Payment') }}</h4>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+          {{ __('Paid') }}: {{ formatCurrency(paymentStore.totalPaid) }} / {{ formatCurrency(cartStore.grandTotal) }}
+        </p>
+        <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-4">
+          {{ __('Outstanding') }}: {{ formatCurrency(newOutstanding) }}
+        </p>
+        <div class="flex gap-2">
+          <button
+            @click="showPartialConfirm = false"
+            class="flex-1 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            {{ __('Cancel') }}
+          </button>
+          <button
+            @click="doSubmit"
+            class="flex-1 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 active:scale-[0.98] transition-all"
+          >
+            {{ __('Confirm') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </Teleport>
 </template>
 
