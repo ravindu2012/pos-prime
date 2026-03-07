@@ -47,10 +47,10 @@ const numPadValue = computed(() => {
 })
 
 const numPadLabel = computed(() => {
-  if (numPadMode.value === 'qty') return 'Quantity'
-  if (numPadMode.value === 'discount') return 'Discount %'
-  if (numPadMode.value === 'discountAmt') return 'Discount Amt'
-  return 'Price'
+  if (numPadMode.value === 'qty') return __('Quantity')
+  if (numPadMode.value === 'discount') return __('Discount %')
+  if (numPadMode.value === 'discountAmt') return __('Discount Amt')
+  return __('Price')
 })
 
 function onItemSelect(index: number) {
@@ -126,8 +126,8 @@ const emit = defineEmits<{
         <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
           <ShoppingCart :size="28" class="text-gray-300 dark:text-gray-600" />
         </div>
-        <span class="text-sm font-medium text-gray-400 dark:text-gray-500">Cart is empty</span>
-        <span class="text-xs text-gray-300 dark:text-gray-600 mt-0.5">Add items to get started</span>
+        <span class="text-sm font-medium text-gray-400 dark:text-gray-500">{{ __('Cart is empty') }}</span>
+        <span class="text-xs text-gray-300 dark:text-gray-600 mt-0.5">{{ __('Add items to get started') }}</span>
       </div>
       <TransitionGroup v-else name="cart-item" tag="div" class="space-y-0.5">
         <CartItemComp
@@ -156,7 +156,7 @@ const emit = defineEmits<{
               ? 'bg-blue-600 text-white shadow-sm'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           >
-            {{ mode === 'qty' ? 'Qty' : mode === 'discount' ? 'Disc%' : mode === 'discountAmt' ? 'Disc$' : 'Price' }}
+            {{ mode === 'qty' ? __('Qty') : mode === 'discount' ? __('Disc%') : mode === 'discountAmt' ? __('Disc$') : __('Price') }}
           </button>
         </div>
         <NumPad
@@ -181,7 +181,7 @@ const emit = defineEmits<{
               ? 'bg-blue-600 text-white shadow-sm'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           >
-            {{ mode === 'qty' ? 'Qty' : mode === 'discount' ? 'Disc%' : mode === 'discountAmt' ? 'Disc$' : 'Price' }}
+            {{ mode === 'qty' ? __('Qty') : mode === 'discount' ? __('Disc%') : mode === 'discountAmt' ? __('Disc$') : __('Price') }}
           </button>
         </div>
         <div class="flex items-center gap-2">
@@ -201,7 +201,7 @@ const emit = defineEmits<{
             class="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-2 py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30"
           >
             <Check :size="12" />
-            Done
+            {{ __('Done') }}
           </button>
         </div>
       </div>
@@ -240,7 +240,7 @@ const emit = defineEmits<{
             : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
         >
           <CreditCard :size="16" />
-          Pay {{ cartStore.items.length > 0 ? formatCurrency(cartStore.grandTotal) : '' }}
+          {{ __('Pay') }} {{ cartStore.items.length > 0 ? formatCurrency(cartStore.grandTotal) : '' }}
         </button>
       </div>
     </div>

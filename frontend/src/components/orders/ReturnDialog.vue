@@ -53,7 +53,7 @@ async function processReturn() {
   // Validate at least one item has qty > 0
   const hasReturnItems = returnItems.value.some(item => item.return_qty > 0)
   if (!hasReturnItems) {
-    error.value = 'Please select at least one item to return'
+    error.value = __('Please select at least one item to return')
     return
   }
   // Validate quantities don't exceed max
@@ -102,13 +102,13 @@ async function processReturn() {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-label="Process Return">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" :aria-label="__('Process Return')" @keydown.escape="emit('close')">
     <div class="absolute inset-0 bg-black/30 dark:bg-black/50" @click="emit('close')" />
     <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-black/30 w-full max-w-lg max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-5 py-3 flex items-center justify-between rounded-t-xl z-10">
         <div class="flex items-center gap-2">
           <RotateCcw :size="18" class="text-red-600 dark:text-red-400" />
-          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Process Return</h3>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ __('Process Return') }}</h3>
         </div>
         <button @click="emit('close')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
           <X :size="18" />
@@ -121,7 +121,7 @@ async function processReturn() {
         </div>
 
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Returning against: <span class="font-medium text-gray-700 dark:text-gray-300">{{ order.name }}</span>
+          {{ __('Returning against') }}: <span class="font-medium text-gray-700 dark:text-gray-300">{{ order.name }}</span>
         </div>
 
         <!-- Return items -->
@@ -134,11 +134,11 @@ async function processReturn() {
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.item_name }}</div>
               <div class="text-xs text-gray-500 dark:text-gray-400">
-                {{ formatCurrency(item.rate) }} &middot; Max: {{ item.max_qty }}
+                {{ formatCurrency(item.rate) }} &middot; {{ __('Max') }}: {{ item.max_qty }}
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <label class="text-xs text-gray-500 dark:text-gray-400">Qty:</label>
+              <label class="text-xs text-gray-500 dark:text-gray-400">{{ __('Qty') }}:</label>
               <input
                 v-model.number="returnItems[index].return_qty"
                 type="number"
@@ -155,7 +155,7 @@ async function processReturn() {
 
         <!-- Refund method -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Refund Method</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('Refund Method') }}</label>
           <select
             v-model="selectedPaymentMethod"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -173,7 +173,7 @@ async function processReturn() {
         <!-- Return total -->
         <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
           <div class="flex justify-between text-sm font-bold text-red-700 dark:text-red-400">
-            <span>Refund Amount</span>
+            <span>{{ __('Refund Amount') }}</span>
             <span>{{ formatCurrency(returnTotal) }}</span>
           </div>
         </div>
@@ -184,7 +184,7 @@ async function processReturn() {
           class="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           <RotateCcw :size="16" />
-          {{ loading ? 'Processing...' : 'Process Return' }}
+          {{ loading ? __('Processing...') : __('Process Return') }}
         </button>
       </div>
     </div>

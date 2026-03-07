@@ -34,9 +34,9 @@ const userFullName = ref('')
 const userImage = ref<string | null>(null)
 
 const navItems = [
-  { name: 'POS', path: '/pos-prime', icon: Grid3x3 },
-  { name: 'Orders', path: '/pos-prime/orders', icon: ClipboardList },
-  { name: 'Customers', path: '/pos-prime/customers', icon: Users },
+  { name: __('POS'), path: '/pos-prime', icon: Grid3x3 },
+  { name: __('Orders'), path: '/pos-prime/orders', icon: ClipboardList },
+  { name: __('Customers'), path: '/pos-prime/customers', icon: Users },
 ]
 
 const currentPath = computed(() => {
@@ -152,7 +152,7 @@ const emit = defineEmits<{
   <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
     <!-- Desktop Sidebar -->
     <aside
-      class="hidden lg:flex lg:w-[60px] flex-col items-center bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 py-3 gap-1"
+      class="hidden lg:flex lg:w-[60px] flex-col items-center bg-white dark:bg-gray-900 border-e border-gray-100 dark:border-gray-800 py-3 gap-1"
     >
       <!-- Company Logo -->
       <button @click="goToDesk" class="mb-3 cursor-pointer" :title="`Back to ${sessionStore.company || 'Desk'}`">
@@ -191,10 +191,10 @@ const emit = defineEmits<{
         class="relative flex flex-col items-center justify-center w-11 h-11 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 dark:hover:text-amber-400 transition-all duration-200"
       >
         <PauseCircle :size="18" />
-        <span class="text-[9px] mt-0.5 font-semibold">Held</span>
+        <span class="text-[9px] mt-0.5 font-semibold">{{ __('Held') }}</span>
         <span
           v-if="draftCount > 0"
-          class="absolute -top-0.5 -right-0.5 bg-amber-500 text-white text-[8px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 shadow-sm"
+          class="absolute -top-0.5 -end-0.5 bg-amber-500 text-white text-[8px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 shadow-sm"
         >
           {{ draftCount > 9 ? '9+' : draftCount }}
         </span>
@@ -207,7 +207,7 @@ const emit = defineEmits<{
         class="flex flex-col items-center justify-center w-11 h-11 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
       >
         <RotateCcw :size="18" />
-        <span class="text-[9px] mt-0.5 font-semibold">Return</span>
+        <span class="text-[9px] mt-0.5 font-semibold">{{ __('Return') }}</span>
       </button>
 
       <!-- Display -->
@@ -219,7 +219,7 @@ const emit = defineEmits<{
           :class="showDisplayPopover ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : ''"
         >
           <Monitor :size="18" />
-          <span class="text-[9px] mt-0.5 font-semibold">Display</span>
+          <span class="text-[9px] mt-0.5 font-semibold">{{ __('Display') }}</span>
         </button>
         <Transition name="fade">
           <div
@@ -273,7 +273,7 @@ const emit = defineEmits<{
         class="flex flex-col items-center justify-center w-11 h-11 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
       >
         <LogOut :size="18" />
-        <span class="text-[9px] mt-0.5 font-semibold">Close</span>
+        <span class="text-[9px] mt-0.5 font-semibold">{{ __('Close') }}</span>
       </button>
     </aside>
 
@@ -302,7 +302,7 @@ const emit = defineEmits<{
             <PauseCircle :size="18" />
             <span
               v-if="draftCount > 0"
-              class="absolute top-0.5 right-0.5 bg-amber-500 text-white text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center"
+              class="absolute top-0.5 end-0.5 bg-amber-500 text-white text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center"
             >
               {{ draftCount }}
             </span>
@@ -329,7 +329,7 @@ const emit = defineEmits<{
       <Transition name="slide-right">
         <nav
           v-if="sidebarOpen"
-          class="lg:hidden fixed right-0 top-12 z-50 bg-white dark:bg-gray-900 shadow-xl rounded-bl-2xl w-52 border-l border-gray-100 dark:border-gray-800"
+          class="lg:hidden fixed end-0 top-12 z-50 bg-white dark:bg-gray-900 shadow-xl rounded-bl-2xl w-52 border-s border-gray-100 dark:border-gray-800"
         >
           <div class="py-1">
             <button
@@ -351,7 +351,7 @@ const emit = defineEmits<{
               class="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
             >
               <RotateCcw :size="16" />
-              Return
+              {{ __('Return') }}
             </button>
             <div class="mx-4 my-1 border-t border-gray-100 dark:border-gray-800" />
             <button
@@ -359,7 +359,7 @@ const emit = defineEmits<{
               class="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
             >
               <LogOut :size="16" />
-              Close Shift
+              {{ __('Close Shift') }}
             </button>
           </div>
         </nav>

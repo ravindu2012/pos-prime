@@ -24,14 +24,14 @@ const weightUom = computed(() => {
   <div class="space-y-1 text-sm">
     <!-- Subtotal -->
     <div class="flex justify-between text-gray-500 dark:text-gray-400">
-      <span class="text-xs">Subtotal ({{ cartStore.totalItems }} items)</span>
+      <span class="text-xs">{{ __('Subtotal') }} ({{ cartStore.totalItems }} {{ __('items') }})</span>
       <span class="text-xs font-medium">{{ formatCurrency(cartStore.subtotal) }}</span>
     </div>
 
     <!-- Discount -->
     <div v-if="cartStore.additionalDiscountPercentage > 0" class="flex justify-between text-orange-600 dark:text-orange-400">
       <span class="text-xs flex items-center gap-1">
-        Discount
+        {{ __('Discount') }}
         <span class="px-1 py-0 bg-orange-100 dark:bg-orange-900/30 rounded text-[10px] font-semibold">{{ cartStore.additionalDiscountPercentage }}%</span>
       </span>
       <span class="text-xs font-semibold">-{{ formatCurrency(cartStore.subtotal - cartStore.netTotal) }}</span>
@@ -53,19 +53,19 @@ const weightUom = computed(() => {
 
     <!-- Fallback tax -->
     <div v-if="cartStore.taxes.length === 0 && cartStore.taxAmount > 0" class="flex justify-between text-gray-500 dark:text-gray-400">
-      <span class="text-xs">Tax</span>
+      <span class="text-xs">{{ __('Tax') }}</span>
       <span class="text-xs font-medium">{{ formatCurrency(cartStore.taxAmount) }}</span>
     </div>
 
     <!-- Tax calculating -->
     <div v-if="cartStore.taxCalculating" class="flex items-center justify-end gap-1 text-xs text-gray-400 dark:text-gray-500">
       <Loader2 :size="10" class="animate-spin" />
-      <span>Calculating...</span>
+      <span>{{ __('Calculating...') }}</span>
     </div>
 
     <!-- Grand Total -->
     <div class="flex justify-between items-center font-bold text-gray-900 dark:text-gray-100 pt-2 mt-1 border-t border-gray-200 dark:border-gray-700">
-      <span class="text-sm">Grand Total</span>
+      <span class="text-sm">{{ __('Grand Total') }}</span>
       <span class="text-base">{{ formatCurrency(cartStore.grandTotal) }}</span>
     </div>
 
@@ -74,13 +74,13 @@ const weightUom = computed(() => {
       v-if="cartStore.serverRoundingAdjustment !== 0"
       class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500"
     >
-      <span>Rounding</span>
+      <span>{{ __('Rounding') }}</span>
       <span>{{ formatCurrency(cartStore.serverRoundingAdjustment) }}</span>
     </div>
 
     <!-- Weight -->
     <div v-if="totalWeight > 0" class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
-      <span>Total Weight</span>
+      <span>{{ __('Total Weight') }}</span>
       <span>{{ totalWeight.toFixed(2) }} {{ weightUom }}</span>
     </div>
   </div>

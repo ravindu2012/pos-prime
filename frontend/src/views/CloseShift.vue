@@ -119,8 +119,8 @@ async function handleCloseShift() {
           <LogOut class="text-red-600 dark:text-red-400" :size="20" />
         </div>
         <div>
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Close POS Shift</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Enter closing balances to reconcile</p>
+          <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ __('Close POS Shift') }}</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Enter closing balances to reconcile') }}</p>
         </div>
       </div>
 
@@ -129,18 +129,18 @@ async function handleCloseShift() {
       </div>
 
       <div v-if="loadingSummary" class="py-12 text-center text-gray-400 dark:text-gray-500 text-sm">
-        Loading shift summary...
+        {{ __('Loading shift summary...') }}
       </div>
 
       <div v-else class="space-y-5">
         <!-- Session info -->
         <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-500 dark:text-gray-400">POS Profile</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ __('POS Profile') }}</span>
             <span class="font-medium text-gray-800 dark:text-gray-200">{{ sessionStore.posProfile }}</span>
           </div>
           <div class="flex justify-between text-sm mt-1">
-            <span class="text-gray-500 dark:text-gray-400">Opening Entry</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ __('Opening Entry') }}</span>
             <span class="font-medium text-gray-800 dark:text-gray-200">{{ sessionStore.openingEntry }}</span>
           </div>
         </div>
@@ -149,34 +149,34 @@ async function handleCloseShift() {
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
             <div class="text-lg font-bold text-blue-700 dark:text-blue-400">{{ numInvoices }}</div>
-            <div class="text-xs text-blue-500 dark:text-blue-400/70">Invoices</div>
+            <div class="text-xs text-blue-500 dark:text-blue-400/70">{{ __('Invoices') }}</div>
           </div>
           <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
             <div class="text-lg font-bold text-green-700 dark:text-green-400">{{ formatCurrency(grandTotal) }}</div>
-            <div class="text-xs text-green-500 dark:text-green-400/70">Grand Total</div>
+            <div class="text-xs text-green-500 dark:text-green-400/70">{{ __('Grand Total') }}</div>
           </div>
           <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
             <div class="text-lg font-bold text-purple-700 dark:text-purple-400">{{ formatCurrency(netTotal) }}</div>
-            <div class="text-xs text-purple-500 dark:text-purple-400/70">Net Total</div>
+            <div class="text-xs text-purple-500 dark:text-purple-400/70">{{ __('Net Total') }}</div>
           </div>
           <div class="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-center">
             <div class="text-lg font-bold text-orange-700 dark:text-orange-400">{{ totalQuantity }}</div>
-            <div class="text-xs text-orange-500 dark:text-orange-400/70">Qty Sold</div>
+            <div class="text-xs text-orange-500 dark:text-orange-400/70">{{ __('Qty Sold') }}</div>
           </div>
         </div>
 
         <!-- Payment reconciliation table -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Payment Reconciliation</h3>
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ __('Payment Reconciliation') }}</h3>
           <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-400">Mode</th>
-                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">Opening</th>
-                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">Expected</th>
-                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">Closing</th>
-                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">Diff</th>
+                  <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-400">{{ __('Mode') }}</th>
+                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">{{ __('Opening') }}</th>
+                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">{{ __('Expected') }}</th>
+                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">{{ __('Closing') }}</th>
+                  <th class="text-right px-3 py-2 font-medium text-gray-600 dark:text-gray-400">{{ __('Diff') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -224,14 +224,14 @@ async function handleCloseShift() {
             @click="router.push('/pos-prime')"
             class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {{ __('Cancel') }}
           </button>
           <button
             @click="handleCloseShift"
             :disabled="loading"
             class="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {{ loading ? 'Closing...' : 'Close Shift' }}
+            {{ loading ? __('Closing...') : __('Close Shift') }}
           </button>
         </div>
       </div>

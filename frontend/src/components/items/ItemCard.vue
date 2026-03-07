@@ -52,7 +52,7 @@ const { formatCurrency } = useCurrency()
               : 'bg-red-500/90 text-white'
         "
       >
-        {{ item.actual_qty > 0 ? item.actual_qty : 'Out' }}
+        {{ item.actual_qty > 0 ? item.actual_qty : __('Out') }}
       </span>
 
       <!-- Bundle badge -->
@@ -60,7 +60,7 @@ const { formatCurrency } = useCurrency()
         v-if="item.is_product_bundle"
         class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm bg-indigo-500/90 text-white"
       >
-        Bundle
+        {{ __('Bundle') }}
       </span>
     </div>
 

@@ -450,7 +450,7 @@ function resetToWelcome() {
     <div v-if="initializing" class="flex h-full items-center justify-center">
       <div class="text-center">
         <div class="mx-auto mb-6 h-14 w-14 animate-spin rounded-full border-4" style="border-color: rgba(255,255,255,0.08); border-top-color: #16a34a;" />
-        <p class="text-lg" style="color: rgba(255,255,255,0.4);">Loading kiosk...</p>
+        <p class="text-lg" style="color: rgba(255,255,255,0.4);">{{ __('Loading kiosk...') }}</p>
       </div>
     </div>
 

@@ -96,8 +96,8 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
       class="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
     >
       <span>
-        More Options
-        <span v-if="hasAnyOption && !expanded" class="ml-1 text-blue-500 dark:text-blue-400">(configured)</span>
+        {{ __('More Options') }}
+        <span v-if="hasAnyOption && !expanded" class="ml-1 text-blue-500 dark:text-blue-400">({{ __('configured') }})</span>
       </span>
       <component :is="expanded ? ChevronUp : ChevronDown" :size="14" />
     </button>
@@ -105,37 +105,37 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
     <div v-if="expanded" class="px-3 pb-3 space-y-2.5 border-t border-gray-100 dark:border-gray-800">
       <!-- Address & Contact -->
       <div v-if="customerStore.customer && customerStore.addresses.length > 0" class="space-y-2 pt-2">
-        <div class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase">Address & Contact</div>
+        <div class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase">{{ __('Address & Contact') }}</div>
         <div v-if="billingAddresses.length > 0">
-          <label class="text-[10px] text-gray-500 dark:text-gray-400">Billing Address</label>
+          <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Billing Address') }}</label>
           <select
             :value="customerStore.selectedAddress || ''"
             @change="customerStore.setSelectedAddress(($event.target as HTMLSelectElement).value || null)"
             :class="selectClass"
           >
-            <option value="">None</option>
+            <option value="">{{ __('None') }}</option>
             <option v-for="a in billingAddresses" :key="a.value" :value="a.value">{{ a.label }}</option>
           </select>
         </div>
         <div v-if="shippingAddresses.length > 0">
-          <label class="text-[10px] text-gray-500 dark:text-gray-400">Shipping Address</label>
+          <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Shipping Address') }}</label>
           <select
             :value="customerStore.selectedShippingAddress || ''"
             @change="customerStore.setSelectedShippingAddress(($event.target as HTMLSelectElement).value || null)"
             :class="selectClass"
           >
-            <option value="">None</option>
+            <option value="">{{ __('None') }}</option>
             <option v-for="a in shippingAddresses" :key="a.value" :value="a.value">{{ a.label }}</option>
           </select>
         </div>
         <div v-if="contactOptions.length > 0">
-          <label class="text-[10px] text-gray-500 dark:text-gray-400">Contact Person</label>
+          <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Contact Person') }}</label>
           <select
             :value="customerStore.selectedContact || ''"
             @change="customerStore.setSelectedContact(($event.target as HTMLSelectElement).value || null)"
             :class="selectClass"
           >
-            <option value="">None</option>
+            <option value="">{{ __('None') }}</option>
             <option v-for="c in contactOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
           </select>
         </div>
@@ -143,7 +143,7 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
 
       <!-- Sales Partner -->
       <div v-if="salesPartners.length > 0" class="pt-2">
-        <label class="text-[10px] text-gray-500 dark:text-gray-400">Sales Partner</label>
+        <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Sales Partner') }}</label>
         <select
           :value="form.sales_partner || ''"
           @change="update('sales_partner', ($event.target as HTMLSelectElement).value)"
@@ -156,7 +156,7 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
 
       <!-- Project -->
       <div v-if="projects.length > 0">
-        <label class="text-[10px] text-gray-500 dark:text-gray-400">Project</label>
+        <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Project') }}</label>
         <select
           :value="form.project || ''"
           @change="update('project', ($event.target as HTMLSelectElement).value)"
@@ -170,17 +170,17 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
       <!-- Customer PO -->
       <div class="grid grid-cols-2 gap-2 pt-2">
         <div>
-          <label class="text-[10px] text-gray-500 dark:text-gray-400">Customer PO #</label>
+          <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Customer PO #') }}</label>
           <input
             :value="form.po_no || ''"
             @input="update('po_no', ($event.target as HTMLInputElement).value)"
             type="text"
-            placeholder="PO Number"
+            :placeholder="__('PO Number')"
             :class="inputClass"
           />
         </div>
         <div>
-          <label class="text-[10px] text-gray-500 dark:text-gray-400">PO Date</label>
+          <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('PO Date') }}</label>
           <input
             :value="form.po_date || ''"
             @input="update('po_date', ($event.target as HTMLInputElement).value)"
@@ -200,7 +200,7 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
             id="set-posting-time"
             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
           />
-          <label for="set-posting-time" class="text-[10px] text-gray-500 dark:text-gray-400">Override Posting Date/Time</label>
+          <label for="set-posting-time" class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Override Posting Date/Time') }}</label>
         </div>
         <div v-if="form.set_posting_time" class="grid grid-cols-2 gap-2 mt-1.5">
           <div>
@@ -225,7 +225,7 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
 
       <!-- Shipping Rule -->
       <div v-if="shippingRules.length > 0">
-        <label class="text-[10px] text-gray-500 dark:text-gray-400">Shipping Rule</label>
+        <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Shipping Rule') }}</label>
         <select
           :value="form.shipping_rule || ''"
           @change="update('shipping_rule', ($event.target as HTMLSelectElement).value)"
@@ -238,7 +238,7 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
 
       <!-- Payment Terms Template -->
       <div v-if="paymentTermsTemplates.length > 0">
-        <label class="text-[10px] text-gray-500 dark:text-gray-400">Payment Terms</label>
+        <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Payment Terms') }}</label>
         <select
           :value="form.payment_terms_template || ''"
           @change="update('payment_terms_template', ($event.target as HTMLSelectElement).value)"
@@ -251,7 +251,7 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
 
       <!-- Terms & Conditions -->
       <div v-if="termsTemplates.length > 0">
-        <label class="text-[10px] text-gray-500 dark:text-gray-400">Terms & Conditions</label>
+        <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Terms & Conditions') }}</label>
         <select
           :value="form.tc_name || ''"
           @change="update('tc_name', ($event.target as HTMLSelectElement).value)"
@@ -264,12 +264,12 @@ const inputClass = "w-full text-xs border border-gray-200 dark:border-gray-700 b
 
       <!-- Remarks -->
       <div>
-        <label class="text-[10px] text-gray-500 dark:text-gray-400">Remarks</label>
+        <label class="text-[10px] text-gray-500 dark:text-gray-400">{{ __('Remarks') }}</label>
         <textarea
           :value="form.remarks || ''"
           @input="update('remarks', ($event.target as HTMLTextAreaElement).value)"
           rows="2"
-          placeholder="Internal notes..."
+          :placeholder="__('Internal notes...')"
           class="w-full text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none placeholder-gray-400 dark:placeholder-gray-500"
         />
       </div>

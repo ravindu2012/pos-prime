@@ -174,7 +174,7 @@ function onCameraScan(value: string) {
           v-if="itemsStore.loading && itemsStore.allItems.length === 0"
           class="flex items-center justify-center py-12"
         >
-          <div class="text-gray-400 dark:text-gray-500 text-sm">Loading items...</div>
+          <div class="text-gray-400 dark:text-gray-500 text-sm">{{ __('Loading items...') }}</div>
         </div>
 
         <div
@@ -182,7 +182,7 @@ function onCameraScan(value: string) {
           class="flex flex-col items-center justify-center py-12"
         >
           <Package class="text-gray-300 dark:text-gray-600 mb-3" :size="48" />
-          <p class="text-gray-500 dark:text-gray-400 text-sm">No items found</p>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">{{ __('No items found') }}</p>
         </div>
 
         <!-- Virtual scrolling grid -->

@@ -6,6 +6,9 @@ declare module '*.vue' {
   export default component
 }
 
+/** Frappe translation function — available globally via window.__ */
+declare function __(msg: string, replace?: Record<string, string> | string[], context?: string): string
+
 declare module 'frappe-ui' {
   export const FrappeUI: any
   export const setConfig: any

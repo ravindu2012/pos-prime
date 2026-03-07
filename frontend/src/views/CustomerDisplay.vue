@@ -101,7 +101,7 @@ function formatDate(dateStr: string) {
       <div class="flex-1 flex overflow-hidden">
         <!-- Left: Search + List -->
         <div
-          class="w-full lg:w-[360px] shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+          class="w-full lg:w-[360px] shrink-0 flex flex-col border-e border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
           :class="{ 'hidden lg:flex': mobileShowDetail }"
         >
           <!-- Search -->
@@ -179,7 +179,7 @@ function formatDate(dateStr: string) {
             <!-- Search with no results -->
             <div v-else-if="store.customers.length === 0 && searchInput.length >= 2" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
               <User :size="32" class="mb-3" />
-              <p class="text-sm">No customers found</p>
+              <p class="text-sm">{{ __('No customers found') }}</p>
             </div>
 
             <!-- Search results -->
@@ -227,8 +227,8 @@ function formatDate(dateStr: string) {
             <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center mb-5">
               <User :size="36" class="text-gray-400 dark:text-gray-500" />
             </div>
-            <p class="text-lg font-semibold text-gray-600 dark:text-gray-300">Select a customer</p>
-            <p class="text-sm mt-1.5 text-gray-400 dark:text-gray-500">Search and select a customer to view details</p>
+            <p class="text-lg font-semibold text-gray-600 dark:text-gray-300">{{ __('Select a customer') }}</p>
+            <p class="text-sm mt-1.5 text-gray-400 dark:text-gray-500">{{ __('Search and select a customer to view details') }}</p>
           </div>
 
           <!-- Customer detail -->

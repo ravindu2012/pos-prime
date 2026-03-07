@@ -120,12 +120,12 @@ function confirm() {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" :aria-label="__('Select Batch or Serial Number')" @keydown.escape="emit('close')">
     <div class="absolute inset-0 bg-black/30 dark:bg-black/50" @click="emit('close')" />
     <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-black/30 w-full max-w-md max-h-[80vh] overflow-y-auto">
       <div class="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between rounded-t-xl z-10">
         <div>
-          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Select {{ hasBatchNo ? 'Batch' : '' }}{{ hasBatchNo && hasSerialNo ? ' & ' : '' }}{{ hasSerialNo ? 'Serial No' : '' }}</h3>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ __('Select') }} {{ hasBatchNo ? __('Batch') : '' }}{{ hasBatchNo && hasSerialNo ? ' & ' : '' }}{{ hasSerialNo ? __('Serial No') : '' }}</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ itemName }}</p>
         </div>
         <button @click="emit('close')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
@@ -135,14 +135,14 @@ function confirm() {
 
       <div class="p-4 space-y-4">
         <div v-if="loading" class="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-          Loading...
+          {{ __('Loading...') }}
         </div>
 
         <!-- Batch Selection -->
         <div v-if="hasBatchNo && !loading">
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Available Batches</h4>
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Available Batches') }}</h4>
           <div v-if="batches.length === 0" class="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">
-            No batches available
+            {{ __('No batches available') }}
           </div>
           <div v-else class="space-y-1.5">
             <button
@@ -158,10 +158,10 @@ function confirm() {
             >
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ batch.batch_no }}</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">Qty: {{ batch.qty }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('Qty') }}: {{ batch.qty }}</span>
               </div>
               <div v-if="batch.expiry_date" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                Expires: {{ batch.expiry_date }}
+                {{ __('Expires') }}: {{ batch.expiry_date }}
               </div>
             </button>
           </div>
@@ -169,14 +169,14 @@ function confirm() {
 
         <!-- Serial Number Selection -->
         <div v-if="hasSerialNo && (!hasBatchNo || selectedBatch) && !loading">
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Serial Numbers</h4>
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Serial Numbers') }}</h4>
 
           <!-- Manual input -->
           <div class="flex gap-2 mb-2">
             <input
               v-model="serialInput"
               type="text"
-              placeholder="Enter or scan serial no..."
+              :placeholder="__('Enter or scan serial no...')"
               class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
               @keydown.enter="addSerialManual"
             />
@@ -184,7 +184,7 @@ function confirm() {
               @click="addSerialManual"
               class="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50"
             >
-              Add
+              {{ __('Add') }}
             </button>
           </div>
 
@@ -195,7 +195,7 @@ function confirm() {
             class="w-full mb-2 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             <Zap :size="12" />
-            {{ autoFetching ? 'Fetching...' : `Auto Fetch (${qty || 1})` }}
+            {{ autoFetching ? __('Fetching...') : `${__('Auto Fetch')} (${qty || 1})` }}
           </button>
 
           <!-- Selected serials -->
@@ -236,7 +236,7 @@ function confirm() {
           class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           <Check :size="16" />
-          Confirm
+          {{ __('Confirm') }}
         </button>
       </div>
     </div>

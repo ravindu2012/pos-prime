@@ -24,7 +24,7 @@ watch([discountType, discountValue], ([type, value]) => {
     >
       <span class="flex items-center gap-1.5">
         <Percent :size="12" class="text-gray-400 dark:text-gray-500" />
-        Invoice Discount
+        {{ __('Invoice Discount') }}
       </span>
       <div class="flex items-center gap-1.5">
         <span v-if="discountValue > 0" class="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded text-[10px] font-bold">
@@ -43,7 +43,7 @@ watch([discountType, discountValue], ([type, value]) => {
             :class="discountType === 'percentage' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           >
             <Percent :size="10" />
-            Percent
+            {{ __('Percent') }}
           </button>
           <button
             @click="discountType = 'amount'"
@@ -51,7 +51,7 @@ watch([discountType, discountValue], ([type, value]) => {
             :class="discountType === 'amount' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           >
             <DollarSign :size="10" />
-            Amount
+            {{ __('Amount') }}
           </button>
         </div>
         <input
