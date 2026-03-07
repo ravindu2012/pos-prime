@@ -21,6 +21,8 @@ export const useCustomerStore = defineStore('customer', () => {
   const selectedAddress = ref<string | null>(null)
   const selectedShippingAddress = ref<string | null>(null)
   const selectedContact = ref<string | null>(null)
+  const outstanding = ref(0)
+  const creditLimit = ref(0)
 
   const loyaltyProgram = computed(() => loyaltyData.value?.loyalty_program ?? null)
   const loyaltyPoints = computed(() => loyaltyData.value?.loyalty_points ?? 0)
@@ -99,6 +101,21 @@ export const useCustomerStore = defineStore('customer', () => {
       } catch {
         // Ignore address/contact fetch errors
       }
+
+      // Fetch outstanding and credit limit
+      try {
+        const { usePosSessionStore } = await import('@/stores/posSession')
+        const session = usePosSessionStore()
+        const outstandingData = await call('pos_prime.api.customer_profile.get_customer_outstanding', {
+          customer: customerName,
+          company: session.company || '',
+        })
+        outstanding.value = outstandingData?.outstanding || 0
+        creditLimit.value = outstandingData?.credit_limit || 0
+      } catch {
+        outstanding.value = 0
+        creditLimit.value = 0
+      }
     } finally {
       loading.value = false
     }
@@ -142,6 +159,8 @@ export const useCustomerStore = defineStore('customer', () => {
     selectedAddress.value = null
     selectedShippingAddress.value = null
     selectedContact.value = null
+    outstanding.value = 0
+    creditLimit.value = 0
     loading.value = false
   }
 
@@ -154,6 +173,8 @@ export const useCustomerStore = defineStore('customer', () => {
     selectedAddress,
     selectedShippingAddress,
     selectedContact,
+    outstanding,
+    creditLimit,
     loyaltyProgram,
     loyaltyPoints,
     maxRedeemableAmount,

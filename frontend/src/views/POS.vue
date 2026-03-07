@@ -52,9 +52,16 @@ useKeyboardShortcuts({
     if (showReceipt.value) showReceipt.value = false
     else if (paymentStore.showPaymentDialog) paymentStore.closePaymentDialog()
     else if (showHeldOrders.value) showHeldOrders.value = false
+    else if (showReturnDialog.value) showReturnDialog.value = false
   },
   onOpenOrders: () => router.push('/pos-prime/orders'),
   onNewOrder: () => startNewOrder(),
+  onFocusSearch: () => {
+    const searchInput = document.querySelector('[aria-label="Search items"]') as HTMLInputElement
+    searchInput?.focus()
+  },
+  onToggleHeldOrders: () => { showHeldOrders.value = !showHeldOrders.value },
+  onToggleReturn: () => { showReturnDialog.value = !showReturnDialog.value },
 })
 
 // Company info for display
@@ -284,7 +291,7 @@ async function startNewOrder() {
     await customerStore.setCustomer(settingsStore.posProfile.customer)
   }
   // Refresh items to get updated stock quantities
-  itemsStore.fetchItems(0)
+  itemsStore.fetchAllItems()
 }
 
 async function holdOrder() {
