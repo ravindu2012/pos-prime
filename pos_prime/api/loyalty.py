@@ -31,21 +31,9 @@ def get_customer_loyalty(customer):
 
         points = (loyalty_points[0].points or 0) if loyalty_points else 0
 
-        # Get conversion factor (points to currency)
-        conversion_factor = 0
-        expense_account = ""
-        cost_center = ""
-
-        if loyalty_program.loyalty_program_type == "Single Tier":
-            # Single Tier programs have one rule — use the first available
-            if loyalty_program.collection_rules:
-                conversion_factor = loyalty_program.collection_rules[0].conversion_factor or 0
-        elif loyalty_program.loyalty_program_type == "Multiple Tier":
-            # For multi-tier, use the first rule as default conversion
-            if loyalty_program.collection_rules:
-                conversion_factor = loyalty_program.collection_rules[0].conversion_factor or 0
-
-        # Get expense account from loyalty program
+        # Redemption conversion_factor is on the Loyalty Program parent doc
+        # It represents currency value per loyalty point (e.g. 0.01 = 1 point = LKR 0.01)
+        conversion_factor = loyalty_program.conversion_factor or 0
         expense_account = loyalty_program.expense_account or ""
         cost_center = loyalty_program.cost_center or ""
 
