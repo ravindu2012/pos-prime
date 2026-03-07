@@ -238,7 +238,8 @@ async function doSubmit() {
 
     const writeOff = applyWriteOff.value ? possibleWriteOff.value : 0
 
-    const itemsPayload = cartStore.items.map((item) => ({
+    // Exclude free items — ERPNext adds them automatically via pricing rules
+    const itemsPayload = cartStore.items.filter((i) => !i.is_free_item).map((item) => ({
       item_code: item.item_code,
       qty: item.qty,
       rate: item.rate,

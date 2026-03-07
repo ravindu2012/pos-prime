@@ -102,6 +102,37 @@ def calculate_taxes(
                 }
             )
 
+        # Extract pricing rule data from items
+        pricing_rules = []
+        free_items = []
+        for item in invoice.items:
+            pr = getattr(item, "pricing_rules", None)
+            is_free = getattr(item, "is_free_item", 0)
+            if is_free:
+                free_items.append({
+                    "item_code": item.item_code,
+                    "item_name": item.item_name,
+                    "qty": item.qty,
+                    "rate": item.rate,
+                    "amount": item.amount,
+                    "uom": item.uom or item.stock_uom,
+                    "stock_uom": item.stock_uom,
+                    "pricing_rules": pr or "",
+                    "is_free_item": 1,
+                })
+            elif pr:
+                pricing_rules.append({
+                    "item_code": item.item_code,
+                    "pricing_rules": pr,
+                    "rate": item.rate,
+                    "price_list_rate": item.price_list_rate,
+                    "discount_percentage": item.discount_percentage or 0,
+                    "discount_amount": item.discount_amount or 0,
+                    "margin_type": item.margin_type or "",
+                    "margin_rate_or_amount": item.margin_rate_or_amount or 0,
+                    "rate_with_margin": item.rate_with_margin or 0,
+                })
+
         return {
             "net_total": invoice.net_total,
             "taxes": taxes,
@@ -111,6 +142,8 @@ def calculate_taxes(
             "rounding_adjustment": invoice.rounding_adjustment,
             "discount_amount": invoice.discount_amount,
             "additional_discount_percentage": invoice.additional_discount_percentage,
+            "pricing_rules": pricing_rules,
+            "free_items": free_items,
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "POS Prime: calculate_taxes failed")

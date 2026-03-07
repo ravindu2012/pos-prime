@@ -96,6 +96,10 @@ export interface CartItem {
   project: string | null
   weight_per_unit: number | null
   weight_uom: string | null
+  // Pricing rule fields
+  is_free_item?: boolean
+  pricing_rules?: string | null
+  price_list_rate?: number | null
 }
 
 export interface TaxRow {
