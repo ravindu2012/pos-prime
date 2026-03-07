@@ -246,4 +246,6 @@ GPL v3 - see [license.txt](license.txt)
 
 **A [Raveforge](https://github.com/ravindu2012) Product**
 
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-%E2%9D%A4-red?style=for-the-badge)](https://github.com/sponsors/ravindu2012) [![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/ravindu2012)
+
 </div>
