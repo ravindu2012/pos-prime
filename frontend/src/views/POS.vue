@@ -141,13 +141,9 @@ onMounted(async () => {
     }
   })
 
+  // Router guard already verified the shift is open and loaded the POS Profile.
+  // Only initialize POS-specific state here.
   try {
-    await sessionStore.checkOpeningEntry()
-    if (!sessionStore.hasOpenShift) {
-      router.replace('/pos-prime/open')
-      return
-    }
-    await settingsStore.loadPOSProfile(sessionStore.posProfile)
     // Set default customer from POS Profile
     if (settingsStore.posProfile?.customer && !customerStore.customer) {
       await customerStore.setCustomer(settingsStore.posProfile.customer)
