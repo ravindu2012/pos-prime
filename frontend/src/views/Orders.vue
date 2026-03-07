@@ -27,10 +27,10 @@ onUnmounted(() => {
 })
 
 const statusTabs = [
-  { label: 'All', value: '' },
-  { label: 'Paid', value: 'Paid' },
-  { label: 'Return', value: 'Return' },
-  { label: 'Draft', value: 'Draft' },
+  { label: __('All'), value: '' },
+  { label: __('Paid'), value: 'Paid' },
+  { label: __('Return'), value: 'Return' },
+  { label: __('Draft'), value: 'Draft' },
 ]
 
 onMounted(() => {
@@ -95,13 +95,13 @@ function handlePrint(invoiceName: string) {
         >
           <ArrowLeft :size="20" />
         </button>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Past Orders</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ __('Past Orders') }}</h2>
       </div>
 
       <div class="flex-1 flex overflow-hidden">
         <!-- Left: Search + List -->
         <div
-          class="w-full lg:w-[360px] shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+          class="w-full lg:w-[360px] shrink-0 flex flex-col border-e border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
           :class="{ 'hidden lg:flex': mobileShowDetail }"
         >
           <!-- Search -->
@@ -111,7 +111,7 @@ function handlePrint(invoiceName: string) {
               <input
                 v-model="searchInput"
                 type="text"
-                placeholder="Search orders..."
+                :placeholder="__('Search orders...')"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 pl-8 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
               />
               <button

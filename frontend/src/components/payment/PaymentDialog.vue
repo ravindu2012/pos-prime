@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
 import { useCustomerStore } from '@/stores/customer'
@@ -31,6 +31,12 @@ onMounted(() => {
     settingsStore.disableGrandTotalToDefaultMop
   )
 })
+
+function onEscapeKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') paymentStore.closePaymentDialog()
+}
+onMounted(() => document.addEventListener('keydown', onEscapeKey))
+onUnmounted(() => document.removeEventListener('keydown', onEscapeKey))
 
 const activeAmount = computed(() => {
   const payment = paymentStore.payments.find(
@@ -141,13 +147,13 @@ async function submit() {
   error.value = ''
   errorMessages.value = []
   if (!customerStore.customer) {
-    error.value = 'Please select a customer'
+    error.value = __('Please select a customer')
     return
   }
   try {
     const activePayments = paymentStore.payments.filter((p) => p.amount > 0)
     if (activePayments.length === 0) {
-      error.value = 'Please enter a payment amount'
+      error.value = __('Please enter a payment amount')
       return
     }
 
@@ -217,7 +223,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
 <template>
   <Teleport to="body">
     <Transition name="payment-overlay">
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-label="Payment">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" :aria-label="__('Payment')">
         <!-- Backdrop -->
         <div
           class="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -238,7 +244,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                   <div class="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
                     <Banknote :size="18" />
                   </div>
-                  <span class="text-sm font-medium text-white/80">Payment</span>
+                  <span class="text-sm font-medium text-white/80">{{ __('Payment') }}</span>
                 </div>
                 <button
                   @click="paymentStore.closePaymentDialog()"
@@ -251,7 +257,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
 
               <!-- Grand Total -->
               <div class="text-center mb-3">
-                <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Grand Total</div>
+                <div class="text-xs text-white/50 uppercase tracking-wider mb-1">{{ __('Grand Total') }}</div>
                 <div class="text-3xl font-bold tracking-tight">
                   {{ formatCurrency(cartStore.grandTotal) }}
                 </div>
@@ -264,16 +270,16 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               >
                 <div v-if="customerStore.outstanding > 0" class="flex items-center gap-1 text-amber-300">
                   <AlertTriangle :size="12" />
-                  <span>Outstanding: {{ formatCurrency(customerStore.outstanding) }}</span>
+                  <span>{{ __('Outstanding') }}: {{ formatCurrency(customerStore.outstanding) }}</span>
                 </div>
                 <div v-if="customerStore.creditLimit > 0" class="text-white/60">
-                  Credit Limit: {{ formatCurrency(customerStore.creditLimit) }}
+                  {{ __('Credit Limit') }}: {{ formatCurrency(customerStore.creditLimit) }}
                 </div>
                 <div
                   v-if="customerStore.creditLimit > 0 && customerStore.outstanding > customerStore.creditLimit"
                   class="text-red-300 font-semibold"
                 >
-                  Exceeded!
+                  {{ __('Exceeded!') }}
                 </div>
               </div>
 
@@ -286,10 +292,10 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 />
               </div>
               <div class="flex justify-between text-[10px] text-white/40 mt-1">
-                <span>{{ formatCurrency(paymentStore.totalPaid) }} paid</span>
-                <span v-if="remaining > 0">{{ formatCurrency(remaining) }} remaining</span>
-                <span v-else-if="change > 0" class="text-green-300">{{ formatCurrency(change) }} change</span>
-                <span v-else class="text-green-300">Fully paid</span>
+                <span>{{ formatCurrency(paymentStore.totalPaid) }} {{ __('paid') }}</span>
+                <span v-if="remaining > 0">{{ formatCurrency(remaining) }} {{ __('remaining') }}</span>
+                <span v-else-if="change > 0" class="text-green-300">{{ formatCurrency(change) }} {{ __('change') }}</span>
+                <span v-else class="text-green-300">{{ __('Fully paid') }}</span>
               </div>
             </div>
           </div>
@@ -335,7 +341,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
             <!-- Active Method Amount Display -->
             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
               <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 font-semibold">
-                {{ paymentStore.activePaymentMethod }} Amount
+                {{ paymentStore.activePaymentMethod }} {{ __('Amount') }}
               </div>
               <!-- Keyboard input for non-touch -->
               <input
@@ -394,7 +400,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 aria-label="Clear"
                 class="h-12 rounded-xl font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 active:scale-95 transition-all duration-150 text-xs"
               >
-                Clear
+                {{ __('Clear') }}
               </button>
             </div>
 
@@ -412,16 +418,16 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 <div class="flex-1">
                   <div class="text-xs font-semibold text-violet-800 dark:text-violet-300 flex items-center gap-1.5">
                     <Award :size="14" />
-                    Redeem Loyalty Points
+                    {{ __('Redeem Loyalty Points') }}
                   </div>
                   <div class="text-[10px] text-violet-500 dark:text-violet-400 mt-0.5">
-                    {{ customerStore.loyaltyPoints }} pts available ({{ formatCurrency(customerStore.maxRedeemableAmount) }})
+                    {{ customerStore.loyaltyPoints }} {{ __('pts available') }} ({{ formatCurrency(customerStore.maxRedeemableAmount) }})
                   </div>
                 </div>
               </label>
               <div v-if="redeemLoyalty" class="mt-2 pl-6">
                 <div class="flex items-center gap-2">
-                  <label class="text-[10px] text-violet-600 dark:text-violet-400 font-medium shrink-0">Points:</label>
+                  <label class="text-[10px] text-violet-600 dark:text-violet-400 font-medium shrink-0">{{ __('Points') }}:</label>
                   <input
                     v-model.number="loyaltyPointsToRedeem"
                     type="number"
@@ -447,7 +453,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 <div class="flex items-center gap-1.5">
                   <Eraser :size="14" class="text-amber-600 dark:text-amber-400" />
                   <span class="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                    Write off {{ formatCurrency(possibleWriteOff) }}
+                    {{ __('Write off') }} {{ formatCurrency(possibleWriteOff) }}
                   </span>
                 </div>
               </label>
@@ -455,7 +461,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
 
             <!-- Payment Summary -->
             <div v-if="paymentStore.payments.filter(p => p.amount > 0).length > 1" class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-1.5">
-              <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-1">Split Payment</div>
+              <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-1">{{ __('Split Payment') }}</div>
               <div
                 v-for="pm in paymentStore.payments.filter(p => p.amount > 0)"
                 :key="pm.mode_of_payment"
@@ -468,14 +474,14 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatCurrency(pm.amount) }}</span>
               </div>
               <div class="border-t border-gray-200 dark:border-gray-700 pt-1.5 flex items-center justify-between text-xs font-bold">
-                <span class="text-gray-700 dark:text-gray-300">Total Paid</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ __('Total Paid') }}</span>
                 <span class="text-blue-600 dark:text-blue-400">{{ formatCurrency(paymentStore.totalPaid) }}</span>
               </div>
             </div>
 
             <!-- Change Display -->
             <div v-if="change > 0" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 text-center">
-              <div class="text-[10px] text-green-500 dark:text-green-400 uppercase tracking-wider font-semibold mb-0.5">Change Due</div>
+              <div class="text-[10px] text-green-500 dark:text-green-400 uppercase tracking-wider font-semibold mb-0.5">{{ __('Change Due') }}</div>
               <div class="text-xl font-bold text-green-700 dark:text-green-400">{{ formatCurrency(change) }}</div>
             </div>
           </div>
@@ -493,7 +499,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
             >
               <Loader2 v-if="paymentStore.submitting" :size="18" class="animate-spin" />
               <Check v-else :size="18" />
-              {{ paymentStore.submitting ? 'Processing...' : 'Complete Payment' }}
+              {{ paymentStore.submitting ? __('Processing...') : __('Complete Payment') }}
             </button>
           </div>
         </div>

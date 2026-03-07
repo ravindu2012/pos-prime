@@ -402,14 +402,14 @@ function onReturnCompleted() {
 
 <template>
   <div v-if="loading" class="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-    <div class="text-gray-400 dark:text-gray-500 text-sm">Loading POS...</div>
+    <div class="text-gray-400 dark:text-gray-500 text-sm">{{ __('Loading POS...') }}</div>
   </div>
 
   <AppShell v-else @toggle-held-orders="showHeldOrders = !showHeldOrders" @toggle-return="showReturnDialog = true">
     <div class="flex h-full">
       <!-- Items panel -->
       <div
-        class="flex-1 flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-800"
+        class="flex-1 flex flex-col overflow-hidden border-e border-gray-200 dark:border-gray-800"
         :class="{ 'hidden sm:flex': mobileTab === 'cart' }"
       >
         <ItemGrid />
@@ -432,7 +432,7 @@ function onReturnCompleted() {
         :class="mobileTab === 'items' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 dark:text-gray-400'"
       >
         <LayoutGrid :size="16" />
-        Items
+        {{ __('Items') }}
       </button>
       <button
         @click="mobileTab = 'cart'"
@@ -440,7 +440,7 @@ function onReturnCompleted() {
         :class="mobileTab === 'cart' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 dark:text-gray-400'"
       >
         <ShoppingCart :size="16" />
-        Cart
+        {{ __('Cart') }}
         <span
           v-if="cartStore.totalItems > 0"
           class="absolute top-1 right-1/4 bg-blue-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"

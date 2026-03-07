@@ -75,7 +75,8 @@ function onBackdropClick(e: MouseEvent) {
     <div
       v-if="show"
       class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      @click="onBackdropClick"
+      role="dialog" aria-modal="true" :aria-label="__('Cash Denomination Count')"
+      @click="onBackdropClick" @keydown.escape="close"
     >
       <!-- Backdrop -->
       <div class="absolute inset-0 bg-black/50" />
@@ -88,7 +89,7 @@ function onBackdropClick(e: MouseEvent) {
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
-            Cash Denomination Count
+            {{ __('Cash Denomination Count') }}
           </h2>
           <button
             @click="close"
@@ -103,7 +104,7 @@ function onBackdropClick(e: MouseEvent) {
           <!-- Notes section -->
           <div v-if="notes.length > 0">
             <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              Notes
+              {{ __('Notes') }}
             </h3>
             <div class="space-y-1.5">
               <div
@@ -136,7 +137,7 @@ function onBackdropClick(e: MouseEvent) {
           <!-- Coins section -->
           <div v-if="coins.length > 0">
             <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              Coins
+              {{ __('Coins') }}
             </h3>
             <div class="space-y-1.5">
               <div
@@ -171,7 +172,7 @@ function onBackdropClick(e: MouseEvent) {
         <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 space-y-3">
           <!-- Total bar -->
           <div class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 rounded-lg px-4 py-3">
-            <span class="text-sm font-semibold text-blue-700 dark:text-blue-300">TOTAL</span>
+            <span class="text-sm font-semibold text-blue-700 dark:text-blue-300">{{ __('TOTAL') }}</span>
             <span class="text-lg font-bold text-blue-700 dark:text-blue-300 tabular-nums">
               {{ formatCurrency(grandTotal) }}
             </span>
@@ -183,13 +184,13 @@ function onBackdropClick(e: MouseEvent) {
               @click="clearAll"
               class="flex-1 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              Clear All
+              {{ __('Clear All') }}
             </button>
             <button
               @click="apply"
               class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
-              Apply
+              {{ __('Apply') }}
             </button>
           </div>
         </div>

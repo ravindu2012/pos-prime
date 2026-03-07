@@ -28,11 +28,11 @@ const filteredGroups = computed(() => {
   <!-- Desktop sidebar list -->
   <div
     v-if="mode === 'desktop'"
-    class="w-48 shrink-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col"
+    class="w-48 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-100 dark:border-gray-800 flex flex-col"
   >
     <div class="p-2 flex flex-col min-h-0 flex-1">
       <div class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-3 py-2">
-        Categories
+        {{ __('Categories') }}
       </div>
       <div v-if="showSearch" class="px-2 pb-2">
         <div class="relative">
@@ -60,7 +60,7 @@ const filteredGroups = computed(() => {
           {{ group }}
         </button>
         <div v-if="filteredGroups.length === 0" class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">
-          No match
+          {{ __('No match') }}
         </div>
       </div>
     </div>

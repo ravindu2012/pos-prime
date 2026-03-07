@@ -90,7 +90,7 @@ function onNewCustomerCreated() {
         <input
           v-model="searchTerm"
           type="text"
-          placeholder="Search customer..."
+          :placeholder="__('Search customer...')"
           aria-label="Search customer"
           class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 pl-8 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-white dark:focus:bg-gray-700 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500"
           @focus="showDropdown = results.length > 0"

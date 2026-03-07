@@ -2,9 +2,11 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { session } from './stores/session'
+import { useRTL } from './composables/useRTL'
 import ToastContainer from './components/layout/ToastContainer.vue'
 
 const router = useRouter()
+const { isRTL } = useRTL()
 
 onMounted(async () => {
   try {
@@ -19,9 +21,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <router-view v-if="session.isLoggedIn" />
-  <div v-else class="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
-    <div class="text-gray-500 dark:text-gray-400">Loading...</div>
+  <div :dir="isRTL ? 'rtl' : 'ltr'">
+    <router-view v-if="session.isLoggedIn" />
+    <div v-else class="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
+      <div class="text-gray-500 dark:text-gray-400">{{ __('Loading...') }}</div>
+    </div>
+    <ToastContainer />
   </div>
-  <ToastContainer />
 </template>

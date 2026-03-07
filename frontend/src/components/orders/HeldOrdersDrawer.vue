@@ -40,7 +40,7 @@ async function confirmDelete() {
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-50 flex">
+    <div class="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" :aria-label="__('Held Orders')" @keydown.escape="emit('close')">
       <!-- Backdrop -->
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="emit('close')" />
 
@@ -54,7 +54,7 @@ async function confirmDelete() {
                 <PauseCircle :size="16" class="text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">Held Orders</h3>
+                <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ __('Held Orders') }}</h3>
                 <span v-if="draftsStore.drafts.length > 0" class="text-[10px] text-gray-400 dark:text-gray-500">
                   {{ draftsStore.drafts.length }} order{{ draftsStore.drafts.length !== 1 ? 's' : '' }}
                 </span>
@@ -83,8 +83,8 @@ async function confirmDelete() {
               <div class="w-14 h-14 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
                 <PauseCircle :size="28" class="text-gray-200 dark:text-gray-600" />
               </div>
-              <span class="text-sm font-medium text-gray-400 dark:text-gray-500">No held orders</span>
-              <span class="text-xs text-gray-300 dark:text-gray-600 mt-0.5">Hold orders to save them for later</span>
+              <span class="text-sm font-medium text-gray-400 dark:text-gray-500">{{ __('No held orders') }}</span>
+              <span class="text-xs text-gray-300 dark:text-gray-600 mt-0.5">{{ __('Hold orders to save them for later') }}</span>
             </div>
 
             <!-- Drafts list -->
@@ -119,7 +119,7 @@ async function confirmDelete() {
                     class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-1.5 shadow-sm shadow-blue-600/20"
                   >
                     <Play :size="12" />
-                    Resume
+                    {{ __('Resume') }}
                   </button>
                   <button
                     @click="requestDelete(draft.name)"
@@ -142,7 +142,7 @@ async function confirmDelete() {
         <div class="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-3">
           <AlertTriangle :size="20" class="text-red-500 dark:text-red-400" />
         </div>
-        <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Delete Held Order?</h4>
+        <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">{{ __('Delete Held Order?') }}</h4>
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
           This will permanently delete <span class="font-semibold">{{ confirmingDelete }}</span>. This action cannot be undone.
         </p>
@@ -151,13 +151,13 @@ async function confirmDelete() {
             @click="confirmingDelete = null"
             class="flex-1 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {{ __('Cancel') }}
           </button>
           <button
             @click="confirmDelete"
             class="flex-1 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 active:scale-[0.98] transition-all"
           >
-            Delete
+            {{ __('Delete') }}
           </button>
         </div>
       </div>

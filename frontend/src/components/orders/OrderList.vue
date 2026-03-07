@@ -24,8 +24,8 @@ function statusColor(order: OrderSummary) {
 }
 
 function statusLabel(order: OrderSummary) {
-  if (order.is_return) return 'Return'
-  if (order.docstatus === 0) return 'Draft'
+  if (order.is_return) return __('Return')
+  if (order.docstatus === 0) return __('Draft')
   return order.status
 }
 </script>
@@ -33,11 +33,11 @@ function statusLabel(order: OrderSummary) {
 <template>
   <div class="space-y-1.5">
     <div v-if="loading && orders.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-      Loading orders...
+      {{ __('Loading orders...') }}
     </div>
     <div v-else-if="orders.length === 0" class="flex flex-col items-center py-8 text-gray-400 dark:text-gray-500">
       <FileText :size="36" class="mb-2" />
-      <span class="text-sm">No orders found</span>
+      <span class="text-sm">{{ __('No orders found') }}</span>
     </div>
     <button
       v-for="order in orders"

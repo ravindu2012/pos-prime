@@ -117,7 +117,7 @@ function newOrder() {
 
 <template>
   <Teleport to="body">
-    <div v-if="invoice" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-label="Receipt">
+    <div v-if="invoice" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" :aria-label="__('Receipt')">
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm no-print" />
       <div class="relative bg-white dark:bg-gray-900 w-full sm:rounded-2xl sm:shadow-2xl dark:sm:shadow-black/30 sm:max-w-sm max-h-[100dvh] sm:max-h-[90vh] flex flex-col overflow-hidden rounded-t-2xl animate-slide-up sm:animate-scale-in">
 
@@ -129,7 +129,7 @@ function newOrder() {
             <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
               <Check :size="22" />
             </div>
-            <div class="text-sm font-semibold">Payment Successful</div>
+            <div class="text-sm font-semibold">{{ __('Payment Successful') }}</div>
             <div class="text-2xl font-bold mt-0.5">{{ formatCurrency(invoice.grand_total) }}</div>
           </div>
           <button
@@ -163,7 +163,7 @@ function newOrder() {
 
             <!-- Customer -->
             <div class="border-t border-dashed border-gray-200 dark:border-gray-700 pt-3 mb-3">
-              <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1 font-semibold">Customer</div>
+              <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1 font-semibold">{{ __('Customer') }}</div>
               <div class="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {{ invoice.customer_name || invoice.customer }}
               </div>
@@ -204,12 +204,12 @@ function newOrder() {
             <!-- Totals -->
             <div class="border-t border-dashed border-gray-200 dark:border-gray-700 mt-3 pt-3 space-y-1">
               <div v-if="invoice.total_qty" class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
-                <span>Total Qty</span>
+                <span>{{ __('Total Qty') }}</span>
                 <span>{{ invoice.total_qty }}</span>
               </div>
 
               <div v-if="invoice.net_total !== undefined" class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span>Net Total</span>
+                <span>{{ __('Net Total') }}</span>
                 <span class="font-medium">{{ formatCurrency(invoice.net_total) }}</span>
               </div>
 
@@ -225,7 +225,7 @@ function newOrder() {
               <!-- Discount -->
               <div v-if="invoice.discount_amount > 0" class="flex justify-between text-xs text-orange-600 dark:text-orange-400">
                 <span>
-                  Discount
+                  {{ __('Discount') }}
                   <span v-if="invoice.additional_discount_percentage" class="text-[10px]">({{ invoice.additional_discount_percentage }}%)</span>
                 </span>
                 <span class="font-medium">-{{ formatCurrency(invoice.discount_amount) }}</span>
@@ -239,19 +239,19 @@ function newOrder() {
 
               <!-- Write-off -->
               <div v-if="invoice.write_off_amount > 0" class="flex justify-between text-xs text-amber-600 dark:text-amber-400">
-                <span>Write Off</span>
+                <span>{{ __('Write Off') }}</span>
                 <span>{{ formatCurrency(invoice.write_off_amount) }}</span>
               </div>
 
               <!-- Grand Total -->
               <div class="flex justify-between text-sm font-bold text-gray-900 dark:text-gray-100 pt-1.5 border-t border-dashed border-gray-200 dark:border-gray-700">
-                <span>Grand Total</span>
+                <span>{{ __('Grand Total') }}</span>
                 <span>{{ formatCurrency(invoice.grand_total) }}</span>
               </div>
 
               <!-- Rounded Total -->
               <div v-if="invoice.rounded_total && invoice.rounded_total !== invoice.grand_total" class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
-                <span>Rounded Total</span>
+                <span>{{ __('Rounded Total') }}</span>
                 <span>{{ formatCurrency(invoice.rounded_total) }}</span>
               </div>
 
@@ -273,18 +273,18 @@ function newOrder() {
               </div>
 
               <div v-if="invoice.change_amount > 0" class="flex justify-between text-xs text-green-600 dark:text-green-400 font-semibold">
-                <span>Change</span>
+                <span>{{ __('Change') }}</span>
                 <span>{{ formatCurrency(invoice.change_amount) }}</span>
               </div>
 
               <div v-if="invoice.outstanding_amount && invoice.outstanding_amount > 0" class="flex justify-between text-xs text-red-600 dark:text-red-400 font-semibold">
-                <span>Outstanding</span>
+                <span>{{ __('Outstanding') }}</span>
                 <span>{{ formatCurrency(invoice.outstanding_amount) }}</span>
               </div>
 
               <!-- Loyalty -->
               <div v-if="invoice.loyalty_points > 0" class="flex justify-between text-xs text-violet-600 dark:text-violet-400">
-                <span>Loyalty Points Redeemed</span>
+                <span>{{ __('Loyalty Points Redeemed') }}</span>
                 <span>{{ invoice.loyalty_points }} pts ({{ formatCurrency(invoice.loyalty_amount) }})</span>
               </div>
 
@@ -306,7 +306,7 @@ function newOrder() {
             </div>
 
             <div class="mt-4 text-[10px] text-gray-400 dark:text-gray-500">
-              Thank you for your purchase!
+              {{ __('Thank you for your purchase!') }}
             </div>
           </div>
         </div>
@@ -329,7 +329,7 @@ function newOrder() {
               class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2"
             >
               <Printer :size="16" />
-              Print
+              {{ __('Print') }}
             </button>
             <button
               @click="showEmailDialog = true"
@@ -342,7 +342,7 @@ function newOrder() {
               class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center gap-2"
             >
               <Plus :size="16" />
-              New Order
+              {{ __('New Order') }}
             </button>
           </div>
         </div>

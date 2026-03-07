@@ -16,7 +16,7 @@ async function applyCoupon() {
     cartStore.setCouponCode(input.value.trim())
     input.value = ''
   } catch (e: any) {
-    error.value = e.message || 'Invalid coupon code'
+    error.value = e.message || __('Invalid coupon code')
   } finally {
     applying.value = false
   }
@@ -48,7 +48,7 @@ function removeCoupon() {
         <input
           v-model="input"
           type="text"
-          placeholder="Coupon code..."
+          :placeholder="__('Coupon code...')"
           class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700 focus:bg-white dark:focus:bg-gray-700 text-gray-900 dark:text-gray-100 pl-7 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500"
           @keydown.enter="applyCoupon"
         />
@@ -60,7 +60,7 @@ function removeCoupon() {
       >
         <Loader2 v-if="applying" :size="10" class="animate-spin" />
         <Check v-else :size="10" />
-        Apply
+        {{ __('Apply') }}
       </button>
     </div>
     <div v-if="error" class="text-[10px] text-red-500 dark:text-red-400 mt-1 font-medium">{{ error }}</div>
