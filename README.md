@@ -20,9 +20,12 @@ ERPNext's built-in POS is functional but limited. POS Prime is a complete replac
 
 - **Fuzzy item search** with barcode scanning — typos, partial matches, and out-of-order words all work
 - **Real-time stock validation** so you never sell what you don't have
+- **Loyalty points** — redeem points at checkout with live balance deduction
+- **Partial payments & credit limits** — split pay, pay later, with automatic credit limit enforcement
 - **Self-checkout kiosk mode** for customer-facing touchscreens
 - **Customer pole display** support (screen-based and VFD serial)
 - **Keyboard shortcuts** (F1-F10) for lightning-fast checkout
+- **i18n ready** — all UI strings wrapped for translation, RTL layout support
 - **Works with ERPNext's inventory, taxes, and accounting** - no separate system
 
 ---
@@ -110,7 +113,9 @@ Customer display with phone number entry for loyalty point lookup.
 - Cart with inline quantity, discount, and price controls
 - Multiple payment methods (Cash, Card, Bank Draft, Cheque)
 - Split payments across multiple methods
-- Credit limit display in payment dialog with exceeded warning
+- Partial payments with confirmation dialog (requires POS Profile `Allow Partial Payment`)
+- Credit limit enforcement — displays outstanding, credit limit, and available credit; blocks transactions that would exceed the limit
+- Loyalty points redemption — apply points at checkout with live grand total update
 - Coupon code support
 - Invoice-level and item-level discounts
 - Tax calculation with Item Tax Templates
@@ -124,6 +129,27 @@ Customer display with phone number entry for loyalty point lookup.
 - Cash denomination calculator for opening/closing shifts (21 currencies supported)
 - Dark/Light mode follows ERPNext user theme preference
 - Favicon and app logo from Website Settings
+
+### Loyalty Points
+- Automatic loyalty point balance display on customer selector and payment dialog
+- Redeem points at checkout — checkbox auto-applies full balance, or enter custom amount
+- Live grand total update showing original price, redemption deduction, and effective total
+- Points × conversion factor calculation shown inline
+- Reads from ERPNext's standard Loyalty Program and Loyalty Point Entry doctypes
+
+### Partial Payments & Credit Limits
+- Allow zero-payment or partial-payment invoices when `Allow Partial Payment` is enabled on POS Profile
+- Confirmation dialog before processing partial payments showing paid vs outstanding
+- Customer outstanding balance aggregated from both Sales Invoices and POS Invoices
+- Remaining credit limit displayed in payment header
+- Credit limit exceeded warning blocks submission when new outstanding would breach the limit
+- Invoices created with correct outstanding amount and Unpaid status
+
+### Internationalization (i18n) & RTL
+- All UI strings wrapped with `__()` translation function for Frappe's translation system
+- RTL-compatible layout using CSS logical properties (`border-e`, `end-0`, etc.)
+- RTL auto-detection from Frappe boot language data
+- Accessible dialogs with `role="dialog"`, `aria-modal`, `aria-label`, and Escape key handling
 
 ### Self-Checkout Kiosk
 - Fullscreen kiosk mode for dedicated touchscreens
@@ -143,9 +169,10 @@ Customer display with phone number entry for loyalty point lookup.
 
 ### Customer 360
 - Customer profile with contact details
-- Loyalty points balance
+- Loyalty points balance with badge on customer selector
+- Outstanding balance and credit limit badges on customer selector
 - Recent POS invoice history
-- Quick customer search
+- Quick customer search with phone number normalization
 
 ### Batch & Serial Number Management
 - Batch selection with qty and expiry dates
@@ -242,6 +269,9 @@ After installation, navigate to `/pos-prime` on your site to open the POS.
 - **UI Framework**: frappe-ui
 - **Backend**: Frappe Framework + ERPNext
 - **Build**: Vite
+- **Search**: Fuse.js (fuzzy matching)
+- **Virtualization**: @tanstack/vue-virtual
+- **i18n**: Frappe translation system (`__()`) with RTL support
 
 ---
 

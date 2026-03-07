@@ -23,6 +23,47 @@ const errorMessages = ref<string[]>([])
 const applyWriteOff = ref(false)
 const redeemLoyalty = ref(false)
 const loyaltyPointsToRedeem = ref(0)
+const loyaltyApplied = ref(false)
+
+// Auto-populate and apply loyalty points when checkbox is toggled on
+watch(redeemLoyalty, (on) => {
+  if (on && customerStore.loyaltyPoints > 0) {
+    loyaltyPointsToRedeem.value = customerStore.loyaltyPoints
+    loyaltyApplied.value = true
+  } else if (!on) {
+    loyaltyPointsToRedeem.value = 0
+    loyaltyApplied.value = false
+  }
+})
+
+// Reset applied state only when user manually changes the points value
+watch(loyaltyPointsToRedeem, (newVal, oldVal) => {
+  // Skip reset when auto-populated by the checkbox toggle
+  if (oldVal === 0 && newVal === customerStore.loyaltyPoints) return
+  loyaltyApplied.value = false
+})
+
+const loyaltyRedemptionAmount = computed(() => {
+  if (!loyaltyApplied.value || !redeemLoyalty.value || loyaltyPointsToRedeem.value <= 0) return 0
+  const cf = customerStore.loyaltyData?.conversion_factor || 0
+  return Math.min(
+    loyaltyPointsToRedeem.value * cf,
+    cartStore.grandTotal
+  )
+})
+
+function applyLoyaltyPoints() {
+  if (loyaltyPointsToRedeem.value <= 0) return
+  if (loyaltyPointsToRedeem.value > customerStore.loyaltyPoints) {
+    loyaltyPointsToRedeem.value = customerStore.loyaltyPoints
+  }
+  loyaltyApplied.value = true
+}
+
+const remainingCreditLimit = computed(() => {
+  if (!customerStore.creditLimit || customerStore.creditLimit <= 0) return 0
+  return Math.max(0, customerStore.creditLimit - customerStore.outstanding)
+})
 
 onMounted(() => {
   paymentStore.initializePayments(
@@ -57,29 +98,32 @@ watch(() => paymentStore.activePaymentMethod, () => {
   displayValue.value = payment?.amount ? String(payment.amount) : ''
 })
 
-const change = computed(() => paymentStore.changeAmount(cartStore.grandTotal))
-const remaining = computed(() => paymentStore.remainingAmount(cartStore.grandTotal))
-const possibleWriteOff = computed(() =>
-  paymentStore.writeOffAmount(cartStore.grandTotal, settingsStore.writeOffLimit)
-)
+const effectiveGrandTotal = computed(() => {
+  let total = cartStore.grandTotal
+  if (loyaltyRedemptionAmount.value > 0) total -= loyaltyRedemptionAmount.value
+  if (applyWriteOff.value && possibleWriteOff.value > 0) total -= possibleWriteOff.value
+  return Math.max(0, total)
+})
+
+const change = computed(() => Math.round(Math.max(0, paymentStore.totalPaid - effectiveGrandTotal.value) * 100) / 100)
+const remaining = computed(() => Math.round(Math.max(0, effectiveGrandTotal.value - paymentStore.totalPaid) * 100) / 100)
+const possibleWriteOff = computed(() => {
+  const baseRemaining = Math.max(0, cartStore.grandTotal - loyaltyRedemptionAmount.value - paymentStore.totalPaid)
+  if (baseRemaining > 0 && baseRemaining <= settingsStore.writeOffLimit) return baseRemaining
+  return 0
+})
 
 const paidPercentage = computed(() => {
-  if (cartStore.grandTotal <= 0) return 100
-  return Math.min(100, (paymentStore.totalPaid / cartStore.grandTotal) * 100)
+  if (effectiveGrandTotal.value <= 0) return 100
+  return Math.min(100, (paymentStore.totalPaid / effectiveGrandTotal.value) * 100)
 })
 
 const isPartialPayment = computed(() => {
-  const effectiveGrandTotal = applyWriteOff.value
-    ? cartStore.grandTotal - possibleWriteOff.value
-    : cartStore.grandTotal
-  return paymentStore.totalPaid < effectiveGrandTotal
+  return paymentStore.totalPaid < effectiveGrandTotal.value
 })
 
 const newOutstanding = computed(() => {
-  const effectiveGrandTotal = applyWriteOff.value
-    ? cartStore.grandTotal - possibleWriteOff.value
-    : cartStore.grandTotal
-  return Math.max(0, effectiveGrandTotal - paymentStore.totalPaid)
+  return Math.max(0, effectiveGrandTotal.value - paymentStore.totalPaid)
 })
 
 const wouldExceedCreditLimit = computed(() => {
@@ -91,10 +135,7 @@ const canSubmit = computed(() => {
   if (paymentStore.submitting) return false
   if (wouldExceedCreditLimit.value && isPartialPayment.value) return false
   if (settingsStore.allowPartialPayment) return true
-  const effectiveGrandTotal = applyWriteOff.value
-    ? cartStore.grandTotal - possibleWriteOff.value
-    : cartStore.grandTotal
-  return paymentStore.totalPaid >= effectiveGrandTotal
+  return paymentStore.totalPaid >= effectiveGrandTotal.value
 })
 
 const showPartialConfirm = ref(false)
@@ -297,27 +338,36 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               <div class="text-center mb-3">
                 <div class="text-xs text-white/50 uppercase tracking-wider mb-1">{{ __('Grand Total') }}</div>
                 <div class="text-3xl font-bold tracking-tight">
-                  {{ formatCurrency(cartStore.grandTotal) }}
+                  {{ formatCurrency(effectiveGrandTotal) }}
+                </div>
+                <div v-if="loyaltyRedemptionAmount > 0" class="text-[10px] text-violet-300 mt-0.5">
+                  <span class="line-through text-white/30 mr-1">{{ formatCurrency(cartStore.grandTotal) }}</span>
+                  <span>-{{ formatCurrency(loyaltyRedemptionAmount) }} {{ __('loyalty') }}</span>
                 </div>
               </div>
 
               <!-- Customer Credit Info -->
               <div
                 v-if="customerStore.customer && (customerStore.outstanding > 0 || customerStore.creditLimit > 0)"
-                class="flex items-center gap-3 text-xs mb-3 bg-white/10 rounded-lg px-3 py-2"
+                class="text-xs mb-3 bg-white/10 rounded-lg px-3 py-2 space-y-1"
               >
-                <div v-if="customerStore.outstanding > 0" class="flex items-center gap-1 text-amber-300">
-                  <AlertTriangle :size="12" />
-                  <span>{{ __('Outstanding') }}: {{ formatCurrency(customerStore.outstanding) }}</span>
+                <div class="flex items-center gap-3">
+                  <div v-if="customerStore.outstanding > 0" class="flex items-center gap-1 text-amber-300">
+                    <AlertTriangle :size="12" />
+                    <span>{{ __('Outstanding') }}: {{ formatCurrency(customerStore.outstanding) }}</span>
+                  </div>
+                  <div v-if="customerStore.creditLimit > 0" class="text-white/60">
+                    {{ __('Credit Limit') }}: {{ formatCurrency(customerStore.creditLimit) }}
+                  </div>
+                  <div
+                    v-if="customerStore.creditLimit > 0 && customerStore.outstanding > customerStore.creditLimit"
+                    class="text-red-300 font-semibold"
+                  >
+                    {{ __('Exceeded!') }}
+                  </div>
                 </div>
-                <div v-if="customerStore.creditLimit > 0" class="text-white/60">
-                  {{ __('Credit Limit') }}: {{ formatCurrency(customerStore.creditLimit) }}
-                </div>
-                <div
-                  v-if="customerStore.creditLimit > 0 && customerStore.outstanding > customerStore.creditLimit"
-                  class="text-red-300 font-semibold"
-                >
-                  {{ __('Exceeded!') }}
+                <div v-if="remainingCreditLimit > 0" class="flex items-center gap-1 text-green-300">
+                  <span>{{ __('Available Credit') }}: {{ formatCurrency(remainingCreditLimit) }}</span>
                 </div>
               </div>
 
@@ -463,7 +513,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                   </div>
                 </div>
               </label>
-              <div v-if="redeemLoyalty" class="mt-2 pl-6">
+              <div v-if="redeemLoyalty" class="mt-2.5 pl-6 space-y-2">
                 <div class="flex items-center gap-2">
                   <label class="text-[10px] text-violet-600 dark:text-violet-400 font-medium shrink-0">{{ __('Points') }}:</label>
                   <input
@@ -473,6 +523,27 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                     :max="customerStore.loyaltyPoints"
                     class="flex-1 rounded-lg border border-violet-200 dark:border-violet-700 px-2.5 py-1.5 text-xs text-right focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                   />
+                  <button
+                    @click="applyLoyaltyPoints"
+                    :disabled="loyaltyPointsToRedeem <= 0"
+                    class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-150 active:scale-95"
+                    :class="loyaltyApplied
+                      ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                      : loyaltyPointsToRedeem > 0
+                        ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
+                  >
+                    <Check v-if="loyaltyApplied" :size="12" class="inline -mt-0.5" />
+                    {{ loyaltyApplied ? __('Applied') : __('Apply') }}
+                  </button>
+                </div>
+                <div v-if="loyaltyApplied" class="flex items-center justify-between text-[10px]">
+                  <span class="text-violet-600 dark:text-violet-400">
+                    {{ loyaltyPointsToRedeem }} {{ __('pts') }} × {{ customerStore.loyaltyData?.conversion_factor }}
+                  </span>
+                  <span class="font-bold text-violet-700 dark:text-violet-300">
+                    -{{ formatCurrency(loyaltyRedemptionAmount) }}
+                  </span>
                 </div>
               </div>
             </div>
