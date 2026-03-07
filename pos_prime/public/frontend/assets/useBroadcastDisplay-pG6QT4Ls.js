@@ -1,2 +1,0 @@
-import{a as p}from"./index-OpEavU0Q.js";const r="pos-prime-display";function m(s){const l=s?`${r}-${s}`:r;let n=null;const t=[];function o(){return n||(n=new BroadcastChannel(l)),n}function i(e){try{o().postMessage(e)}catch{}}function u(e){const d=o(),c=f=>{e(f.data)};d.addEventListener("message",c),t.push(c)}function a(){if(n){for(const e of t)n.removeEventListener("message",e);t.length=0,n.close(),n=null}}return p(a),{sendUpdate:i,onUpdate:u,close:a}}export{m as u};
-//# sourceMappingURL=useBroadcastDisplay-pG6QT4Ls.js.map

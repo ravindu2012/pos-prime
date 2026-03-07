@@ -54,6 +54,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   if (to.meta.requiresShift) {
     const { usePosSessionStore } = await import('./stores/posSession')
+    const { useSettingsStore } = await import('./stores/settings')
     const sessionStore = usePosSessionStore()
     if (!sessionStore.hasOpenShift && !sessionStore.loading) {
       try {
@@ -63,6 +64,15 @@ router.beforeEach(async (to) => {
       }
       if (!sessionStore.hasOpenShift) {
         return { name: 'OpenShift' }
+      }
+    }
+    // Ensure POS Profile (and currency) is loaded for all shift-required pages
+    const settingsStore = useSettingsStore()
+    if (!settingsStore.posProfile && sessionStore.posProfile) {
+      try {
+        await settingsStore.loadPOSProfile(sessionStore.posProfile)
+      } catch {
+        // ignore — POS view will retry
       }
     }
   }
