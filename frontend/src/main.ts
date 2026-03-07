@@ -1,3 +1,6 @@
+// globals must be imported FIRST — before any Vue component that uses __()
+import './globals'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import {
@@ -14,6 +17,9 @@ const pinia = createPinia()
 const app = createApp(App)
 
 setConfig('resourceFetcher', frappeRequest)
+
+// Make __() available in all Vue templates
+app.config.globalProperties.__ = window.__
 
 app.use(pinia)
 app.use(router)
