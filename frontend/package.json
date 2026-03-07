@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/vue-virtual": "^3.13.21",
     "frappe-ui": "^0.1.60",
+    "fuse.js": "^7.1.0",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.0",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Search, X, ScanBarcode } from 'lucide-vue-next'
 import { useTouchDevice } from '@/composables/useTouchDevice'
 
@@ -16,7 +16,12 @@ const emit = defineEmits<{
 
 const localValue = ref(props.modelValue)
 const isFocused = ref(false)
+const inputRef = ref<HTMLInputElement | null>(null)
 let debounceTimer: ReturnType<typeof setTimeout>
+
+onMounted(() => {
+  inputRef.value?.focus()
+})
 
 onUnmounted(() => {
   clearTimeout(debounceTimer)
@@ -57,12 +62,13 @@ function clear() {
       :size="16"
     />
     <input
+      ref="inputRef"
       :value="localValue"
       @input="onInput"
       @focus="isFocused = true"
       @blur="isFocused = false"
       type="text"
-      placeholder="Search items..."
+      placeholder="Search items... (F1 or /)"
       aria-label="Search items"
       class="flex-1 bg-transparent pl-2 pr-2 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none placeholder-gray-400 dark:placeholder-gray-500"
     />

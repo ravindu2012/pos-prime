@@ -1,57 +1,77 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { call } from 'frappe-ui'
+import Fuse from 'fuse.js'
 import type { Item } from '@/types'
 
-let fetchRequestId = 0
-
 export const useItemsStore = defineStore('items', () => {
-  const items = ref<Item[]>([])
+  const allItems = ref<Item[]>([])
   const searchTerm = ref('')
   const selectedGroup = ref('All Item Groups')
   const itemGroups = ref<string[]>([])
   const loading = ref(false)
-  const pageLength = ref(20)
-  const hasMore = ref(true)
   const error = ref<string | null>(null)
 
-  async function fetchItems(start = 0, posProfile?: string) {
-    const currentId = ++fetchRequestId
+  let fuse: Fuse<Item> | null = null
+
+  function buildIndex() {
+    fuse = new Fuse(allItems.value, {
+      keys: [
+        { name: 'item_name', weight: 0.5 },
+        { name: 'item_code', weight: 0.3 },
+        { name: 'barcode', weight: 0.2 },
+      ],
+      threshold: 0.4,
+      distance: 200,
+      ignoreLocation: true,
+    })
+  }
+
+  const filteredItems = computed(() => {
+    let items = allItems.value
+
+    // Filter by group
+    if (selectedGroup.value && selectedGroup.value !== 'All Item Groups') {
+      items = items.filter(i => i.item_group === selectedGroup.value)
+    }
+
+    // Fuzzy search
+    const term = searchTerm.value.trim()
+    if (term && fuse) {
+      const results = fuse.search(term)
+      if (selectedGroup.value && selectedGroup.value !== 'All Item Groups') {
+        return results
+          .filter(r => r.item.item_group === selectedGroup.value)
+          .map(r => r.item)
+      }
+      return results.map(r => r.item)
+    }
+
+    return items
+  })
+
+  async function fetchAllItems(posProfile?: string) {
     loading.value = true
+    error.value = null
     try {
-      // Lazy import to avoid circular deps
       const { usePosSessionStore } = await import('@/stores/posSession')
       const session = usePosSessionStore()
-
       const profile = posProfile || session.posProfile || ''
 
       const data = await call('pos_prime.api.items.get_items', {
-        start,
-        page_length: pageLength.value,
-        search_term: searchTerm.value,
-        item_group: selectedGroup.value === 'All Item Groups' ? '' : selectedGroup.value,
+        start: 0,
+        page_length: 5000,
+        search_term: '',
+        item_group: '',
         pos_profile: profile,
       })
 
-      if (currentId !== fetchRequestId) return []
-
-      const newItems: Item[] = data.items || []
-
-      if (start === 0) {
-        items.value = newItems
-      } else {
-        items.value = [...items.value, ...newItems]
-      }
-      hasMore.value = newItems.length === pageLength.value
-      return newItems
+      allItems.value = data.items || []
+      buildIndex()
     } catch (e) {
-      if (currentId !== fetchRequestId) return []
       error.value = 'Failed to load items'
-      return []
     } finally {
-      if (currentId === fetchRequestId) {
-        loading.value = false
-      }
+      loading.value = false
     }
   }
 
@@ -95,27 +115,26 @@ export const useItemsStore = defineStore('items', () => {
   }
 
   function $reset() {
-    items.value = []
+    allItems.value = []
     searchTerm.value = ''
     selectedGroup.value = 'All Item Groups'
     itemGroups.value = []
-    hasMore.value = true
     loading.value = false
-    pageLength.value = 20
     error.value = null
-    fetchRequestId++
+    fuse = null
   }
 
   return {
-    items,
+    allItems,
+    items: filteredItems,
+    filteredItems,
     searchTerm,
     selectedGroup,
     itemGroups,
     loading,
-    hasMore,
-    fetchItems,
-    fetchItemGroups,
     error,
+    fetchAllItems,
+    fetchItemGroups,
     searchByBarcode,
     setSearchTerm,
     setSelectedGroup,

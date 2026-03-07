@@ -468,12 +468,24 @@
   resolved "https://registry.npmjs.org/@tanstack/virtual-core/-/virtual-core-3.13.19.tgz"
   integrity sha512-/BMP7kNhzKOd7wnDeB8NrIRNLwkf5AhCYCvtfZV2GXWbBieFm/el0n6LOAXlTi6ZwHICSNnQcIxRCWHrLzDY+g==
 
+"@tanstack/virtual-core@3.13.21":
+  version "3.13.21"
+  resolved "https://registry.yarnpkg.com/@tanstack/virtual-core/-/virtual-core-3.13.21.tgz#925eec83d17d28a30ad4c3645d54d5fbe797bbb3"
+  integrity sha512-ww+fmLHyCbPSf7JNbWZP3g7wl6SdNo3ah5Aiw+0e9FDErkVHLKprYUrwTm7dF646FtEkN/KkAKPYezxpmvOjxw==
+
 "@tanstack/vue-virtual@^3.0.0-beta.60", "@tanstack/vue-virtual@^3.12.0", "@tanstack/vue-virtual@^3.8.1":
   version "3.13.19"
   resolved "https://registry.npmjs.org/@tanstack/vue-virtual/-/vue-virtual-3.13.19.tgz"
   integrity sha512-07Fp1TYuIziB4zIDA/moeDKHODePy3K1fN4c4VIAGnkxo1+uOvBJP7m54CoxKiQX6Q9a1dZnznrwOg9C86yvvA==
   dependencies:
     "@tanstack/virtual-core" "3.13.19"
+
+"@tanstack/vue-virtual@^3.13.21":
+  version "3.13.21"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-virtual/-/vue-virtual-3.13.21.tgz#fc0a2e2614225c65bedb291b1d49eca776953e05"
+  integrity sha512-zneUNdQTcUhoDl6+ek+/O4S9gSZRAc2q7VLscZ4WZnFfZcHc3M7OyVCfSDC3hGuwFqzfL8Cx5bZF6zbGCYwXmw==
+  dependencies:
+    "@tanstack/virtual-core" "3.13.21"
 
 "@tiptap/core@^3.11.0", "@tiptap/core@^3.20.0":
   version "3.20.0"
@@ -1501,6 +1513,11 @@ function-bind@^1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/function-bind/-/function-bind-1.1.2.tgz"
   integrity sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==
+
+fuse.js@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/fuse.js/-/fuse.js-7.1.0.tgz#306228b4befeee11e05b027087c2744158527d09"
+  integrity sha512-trLf4SzuuUxfusZADLINj+dE8clK1frKdmqiJNb1Es75fmI5oY6X2mxLVUciLLjxqw/xr72Dhy+lER6dGd02FQ==
 
 glob-parent@^5.1.2, glob-parent@~5.1.2:
   version "5.1.2"

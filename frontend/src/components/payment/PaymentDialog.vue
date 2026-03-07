@@ -7,7 +7,7 @@ import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
 import { useTouchDevice } from '@/composables/useTouchDevice'
-import { X, Check, Banknote, CreditCard, Wallet, Coins, Award, Eraser, Delete, Loader2 } from 'lucide-vue-next'
+import { X, Check, Banknote, CreditCard, Wallet, Coins, Award, Eraser, Delete, Loader2, AlertTriangle } from 'lucide-vue-next'
 
 const { isTouchDevice } = useTouchDevice()
 
@@ -254,6 +254,26 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                 <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Grand Total</div>
                 <div class="text-3xl font-bold tracking-tight">
                   {{ formatCurrency(cartStore.grandTotal) }}
+                </div>
+              </div>
+
+              <!-- Customer Credit Info -->
+              <div
+                v-if="customerStore.customer && (customerStore.outstanding > 0 || customerStore.creditLimit > 0)"
+                class="flex items-center gap-3 text-xs mb-3 bg-white/10 rounded-lg px-3 py-2"
+              >
+                <div v-if="customerStore.outstanding > 0" class="flex items-center gap-1 text-amber-300">
+                  <AlertTriangle :size="12" />
+                  <span>Outstanding: {{ formatCurrency(customerStore.outstanding) }}</span>
+                </div>
+                <div v-if="customerStore.creditLimit > 0" class="text-white/60">
+                  Credit Limit: {{ formatCurrency(customerStore.creditLimit) }}
+                </div>
+                <div
+                  v-if="customerStore.creditLimit > 0 && customerStore.outstanding > customerStore.creditLimit"
+                  class="text-red-300 font-semibold"
+                >
+                  Exceeded!
                 </div>
               </div>
 
