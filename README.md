@@ -18,10 +18,11 @@ Built for speed, touch screens, and real retail workflows.
 
 ERPNext's built-in POS is functional but limited. POS Prime is a complete replacement built from the ground up with Vue 3, designed for businesses that need a fast, reliable, and modern point of sale.
 
-- **Instant item search** with barcode scanning and manual lookup
+- **Fuzzy item search** with barcode scanning — typos, partial matches, and out-of-order words all work
 - **Real-time stock validation** so you never sell what you don't have
 - **Self-checkout kiosk mode** for customer-facing touchscreens
 - **Customer pole display** support (screen-based and VFD serial)
+- **Keyboard shortcuts** (F1-F10) for lightning-fast checkout
 - **Works with ERPNext's inventory, taxes, and accounting** - no separate system
 
 ---
@@ -101,11 +102,15 @@ Customer display with phone number entry for loyalty point lookup.
 ## Features
 
 ### Point of Sale
+- Fuzzy item search powered by Fuse.js — typos, partial matches, and out-of-order words all work
+- Virtual scrolling item grid for smooth performance with large catalogs (powered by @tanstack/vue-virtual)
 - Item grid with images, categories, and stock indicators
 - Barcode scanner support (USB/Bluetooth HID scanners)
+- Keyboard shortcuts (F1-F10) for lightning-fast checkout — works even inside input fields
 - Cart with inline quantity, discount, and price controls
 - Multiple payment methods (Cash, Card, Bank Draft, Cheque)
 - Split payments across multiple methods
+- Credit limit display in payment dialog with exceeded warning
 - Coupon code support
 - Invoice-level and item-level discounts
 - Tax calculation with Item Tax Templates
@@ -165,6 +170,22 @@ Customer display with phone number entry for loyalty point lookup.
 - App logo from Website Settings (falls back to Company logo)
 - Favicon from Website Settings
 - App name from Website Settings shown in browser tab
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| F1 or / | Focus item search |
+| F2 | Toggle held orders |
+| F3 or F9 | Open payment |
+| F4 or Ctrl+S | Hold current order |
+| F5 or Ctrl+O | Open past orders |
+| F8 or Ctrl+N | New order |
+| F10 | Toggle returns |
+| Ctrl+Enter | Open payment |
+| Escape | Close current dialog |
+
+All F-key shortcuts work globally, even when typing in input fields.
 
 ---
 
