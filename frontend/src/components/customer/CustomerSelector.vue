@@ -3,7 +3,10 @@ import { ref, watch, onUnmounted } from 'vue'
 import { useCustomerStore } from '@/stores/customer'
 import { usePosSessionStore } from '@/stores/posSession'
 import NewCustomerDialog from './NewCustomerDialog.vue'
-import { User, X, Plus, Search, Phone, Tag } from 'lucide-vue-next'
+import { useCurrency } from '@/composables/useCurrency'
+import { User, X, Plus, Search, Phone, Tag, AlertTriangle } from 'lucide-vue-next'
+
+const { formatCurrency } = useCurrency()
 
 const customerStore = useCustomerStore()
 const sessionStore = usePosSessionStore()
@@ -71,6 +74,22 @@ function onNewCustomerCreated() {
           >
             <Tag :size="8" />
             {{ customerStore.loyaltyPoints }} pts
+          </span>
+          <span
+            v-if="customerStore.outstanding > 0"
+            class="inline-flex items-center gap-0.5 px-1.5 py-0 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-md text-[9px] font-bold"
+          >
+            <AlertTriangle :size="8" />
+            {{ formatCurrency(customerStore.outstanding) }}
+          </span>
+          <span
+            v-if="customerStore.creditLimit > 0"
+            class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded-md text-[9px] font-bold"
+            :class="customerStore.outstanding > customerStore.creditLimit
+              ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'"
+          >
+            {{ __('Limit') }}: {{ formatCurrency(customerStore.creditLimit) }}
           </span>
         </div>
       </div>

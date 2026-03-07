@@ -39,7 +39,7 @@ def get_customer_outstanding(customer, company=""):
     if not frappe.db.exists("Customer", customer):
         return {"outstanding": 0, "credit_limit": 0}
 
-    # Outstanding from unpaid Sales/POS Invoices
+    # Outstanding from unpaid Sales Invoices + POS Invoices
     params = {"customer": customer}
     company_filter = ""
     if company:
@@ -49,11 +49,17 @@ def get_customer_outstanding(customer, company=""):
     result = frappe.db.sql(
         f"""
         SELECT COALESCE(SUM(outstanding_amount), 0) as outstanding
-        FROM `tabSales Invoice`
-        WHERE customer = %(customer)s
-            AND docstatus = 1
-            AND outstanding_amount > 0
-            {company_filter}
+        FROM (
+            SELECT outstanding_amount FROM `tabSales Invoice`
+            WHERE customer = %(customer)s AND docstatus = 1
+                AND outstanding_amount > 0 {company_filter}
+            UNION ALL
+            SELECT outstanding_amount FROM `tabPOS Invoice`
+            WHERE customer = %(customer)s AND docstatus = 1
+                AND outstanding_amount > 0
+                AND IFNULL(consolidated_invoice, '') = ''
+                {company_filter}
+        ) combined
         """,
         params,
         as_dict=True,

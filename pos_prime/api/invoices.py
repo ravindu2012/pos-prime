@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 import json
 
 from pos_prime.api._utils import (
@@ -92,10 +93,11 @@ def create_pos_invoice(
     # Input validation
     if not items:
         frappe.throw(_("Items cannot be empty"))
-    if not payments:
-        frappe.throw(_("Payments cannot be empty"))
 
     profile = frappe.get_doc("POS Profile", pos_profile)
+
+    if not payments and not profile.allow_partial_payment:
+        frappe.throw(_("Payments cannot be empty"))
 
     invoice = frappe.get_doc(
         {
@@ -140,6 +142,12 @@ def create_pos_invoice(
                 "amount": amount,
             },
         )
+
+    # ERPNext requires at least one payment row — add a zero-amount default
+    # when partial payment is allowed but no payments were provided
+    if not invoice.payments and profile.allow_partial_payment:
+        default_mop = profile.payments[0].mode_of_payment if profile.payments else "Cash"
+        invoice.append("payments", {"mode_of_payment": default_mop, "amount": 0})
 
     invoice.paid_amount = total_paid
 
@@ -249,5 +257,17 @@ def create_pos_invoice(
     invoice.set_missing_values()
     invoice.insert()
     invoice.submit()
+
+    # For partial payments: ERPNext skips outstanding_amount calculation for
+    # POS Invoices (taxes_and_totals.py only handles Sales/Purchase Invoice).
+    # Compute it manually so the invoice shows as Unpaid instead of Paid.
+    if profile.allow_partial_payment and total_paid < (invoice.rounded_total or invoice.grand_total):
+        outstanding = flt(
+            (invoice.rounded_total or invoice.grand_total) - total_paid - flt(invoice.write_off_amount),
+            invoice.precision("outstanding_amount"),
+        )
+        invoice.db_set("outstanding_amount", outstanding, update_modified=False)
+        invoice.outstanding_amount = outstanding
+        invoice.set_status(update=True)
 
     return format_invoice_response(invoice)
