@@ -298,7 +298,7 @@ async function holdOrder() {
     await draftsStore.saveDraft({
       customer: customerStore.customer.name,
       pos_profile: sessionStore.posProfile,
-      items: cartStore.items.map((item) => ({
+      items: cartStore.items.filter((i) => !i.is_free_item).map((item) => ({
         item_code: item.item_code,
         qty: item.qty,
         rate: item.rate,

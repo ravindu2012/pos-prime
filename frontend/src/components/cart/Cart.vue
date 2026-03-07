@@ -54,19 +54,22 @@ const numPadLabel = computed(() => {
 })
 
 function onItemSelect(index: number) {
+  const item = cartStore.items[index]
+  if (item?.is_free_item) return // Free items are not editable
   cartStore.selectItem(index)
   showNumPad.value = true
   numPadMode.value = 'qty'
   // Sync keyboard input
-  const item = cartStore.items[index]
   if (item) keyboardInput.value = String(item.qty)
 }
 
 function onUpdateQty(index: number, qty: number) {
+  if (cartStore.items[index]?.is_free_item) return
   cartStore.updateQty(index, qty)
 }
 
 function onRemove(index: number) {
+  if (cartStore.items[index]?.is_free_item) return
   cartStore.removeItem(index)
   showNumPad.value = false
 }

@@ -267,6 +267,9 @@ export const useCartStore = defineStore('cart', () => {
       serverRoundedTotal.value = data.rounded_total
       serverRoundingAdjustment.value = data.rounding_adjustment || 0
       serverTotalTaxesAndCharges.value = data.total_taxes_and_charges || 0
+
+      // Apply pricing rule data to cart items
+      applyPricingRuleData(data.pricing_rules || [], data.free_items || [])
     } catch {
       if (currentId !== taxRequestId) return
       error.value = 'Tax calculation failed'
@@ -275,6 +278,72 @@ export const useCartStore = defineStore('cart', () => {
       if (currentId === taxRequestId) {
         taxCalculating.value = false
       }
+    }
+  }
+
+  function applyPricingRuleData(
+    pricingRules: { item_code: string; pricing_rules: string; rate: number; price_list_rate: number; discount_percentage: number; discount_amount: number }[],
+    freeItems: { item_code: string; item_name: string; qty: number; rate: number; amount: number; uom: string; stock_uom: string; pricing_rules: string }[],
+  ) {
+    // Clear previous pricing rule markers from non-free items
+    for (const item of items.value) {
+      if (!item.is_free_item) {
+        item.pricing_rules = null
+        item.price_list_rate = null
+      }
+    }
+
+    // Remove old free items (they'll be re-added from fresh data)
+    items.value = items.value.filter((i) => !i.is_free_item)
+
+    // Apply pricing rule info to matching cart items
+    for (const pr of pricingRules) {
+      const cartItem = items.value.find((i) => i.item_code === pr.item_code && !i.is_free_item)
+      if (cartItem) {
+        cartItem.pricing_rules = pr.pricing_rules
+        cartItem.price_list_rate = pr.price_list_rate
+        // Update rate and discount from pricing rule
+        if (pr.discount_percentage > 0 && cartItem.discount_percentage === 0) {
+          cartItem.discount_percentage = pr.discount_percentage
+          recalcItemAmount(items.value.indexOf(cartItem))
+        }
+        if (pr.rate !== cartItem.rate && pr.rate > 0) {
+          cartItem.rate = pr.rate
+          recalcItemAmount(items.value.indexOf(cartItem))
+        }
+      }
+    }
+
+    // Add free items from Buy X Get Y rules
+    for (const fi of freeItems) {
+      items.value.push({
+        item_code: fi.item_code,
+        item_name: fi.item_name,
+        rate: fi.rate || 0,
+        qty: fi.qty,
+        amount: fi.amount || 0,
+        uom: fi.uom || fi.stock_uom || '',
+        discount_percentage: 0,
+        discount_amount: 0,
+        image: null,
+        stock_uom: fi.stock_uom || fi.uom || '',
+        has_serial_no: false,
+        has_batch_no: false,
+        serial_no: null,
+        batch_no: null,
+        serial_and_batch_bundle: null,
+        conversion_factor: 1,
+        item_tax_template: null,
+        margin_type: null,
+        margin_rate_or_amount: 0,
+        description: null,
+        project: null,
+        weight_per_unit: null,
+        weight_uom: null,
+        is_free_item: true,
+        pricing_rules: fi.pricing_rules || null,
+        price_list_rate: null,
+      })
     }
   }
 
