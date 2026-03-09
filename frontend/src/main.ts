@@ -10,19 +10,34 @@ import {
   resourcesPlugin,
 } from 'frappe-ui'
 import App from './App.vue'
-import router from './router'
+import { createAppRouter } from './router'
+import { setDeskMode } from './composables/useDeskMode'
 import './index.css'
 
-const pinia = createPinia()
-const app = createApp(App)
+// Detect desk mode: #pos-prime-app = inside Frappe desk page
+// Standalone mode: #app exists AND we're on a /pos-prime/* URL
+// (Frappe desk also has a #app element, so we must check the URL to avoid conflicts)
+const deskMount = document.getElementById('pos-prime-app')
+const isStandalonePath = window.location.pathname.startsWith('/pos-prime')
+const standaloneMount = isStandalonePath ? document.getElementById('app') : null
+const mountTarget = deskMount || standaloneMount
 
-setConfig('resourceFetcher', frappeRequest)
+if (mountTarget) {
+  const isDeskMode = !!deskMount
+  setDeskMode(isDeskMode)
 
-// Make __() available in all Vue templates
-app.config.globalProperties.__ = window.__
+  const pinia = createPinia()
+  const app = createApp(App)
+  const router = createAppRouter(isDeskMode)
 
-app.use(pinia)
-app.use(router)
-app.use(resourcesPlugin)
+  setConfig('resourceFetcher', frappeRequest)
 
-app.mount('#app')
+  // Make __() available in all Vue templates
+  app.config.globalProperties.__ = window.__
+
+  app.use(pinia)
+  app.use(router)
+  app.use(resourcesPlugin)
+
+  app.mount(mountTarget)
+}

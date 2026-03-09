@@ -62,13 +62,25 @@ export const useCartStore = defineStore('cart', () => {
     items.value.reduce((sum, item) => sum + item.qty, 0)
   )
 
-  function addItem(item: Item) {
+  function addItem(item: Item, validateStock = true): string | null {
+    // Stock validation: check available qty for stock items
+    if (validateStock && item.is_stock_item) {
+      const available = item.actual_qty ?? 0
+      // Sum qty already in cart for this item
+      const cartQty = items.value
+        .filter((i) => i.item_code === item.item_code)
+        .reduce((sum, i) => sum + i.qty, 0)
+      if (cartQty >= available) {
+        return __('Not enough stock. Available: {0}', [String(available)])
+      }
+    }
+
     // For batch/serial items, don't merge — they get separate lines
     if (item.has_batch_no || item.has_serial_no) {
       items.value.push(createCartItem(item))
       selectedItemIndex.value = items.value.length - 1
       debounceTaxCalculation()
-      return
+      return null
     }
 
     const existingIndex = items.value.findIndex(
@@ -83,6 +95,7 @@ export const useCartStore = defineStore('cart', () => {
       selectedItemIndex.value = items.value.length - 1
     }
     debounceTaxCalculation()
+    return null
   }
 
   function createCartItem(item: Item): CartItem {
@@ -113,14 +126,25 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  function updateQty(index: number, qty: number) {
+  function updateQty(index: number, qty: number, availableQty?: number, validateStock = true): string | null {
     if (qty <= 0) {
       removeItem(index)
-      return
+      return null
+    }
+    // Stock validation if available qty is provided and validation is enabled
+    if (validateStock && availableQty !== undefined && availableQty > 0) {
+      const item = items.value[index]
+      const otherCartQty = items.value
+        .filter((i, idx) => idx !== index && i.item_code === item.item_code)
+        .reduce((sum, i) => sum + i.qty, 0)
+      if (qty + otherCartQty > availableQty) {
+        return __('Not enough stock. Available: {0}', [String(availableQty)])
+      }
     }
     items.value[index].qty = qty
     recalcItemAmount(index)
     debounceTaxCalculation()
+    return null
   }
 
   function updateRate(index: number, rate: number) {

@@ -212,7 +212,7 @@
     {
       "label": "Open POS Prime",
       "type": "URL",
-      "url": "/pos-prime"
+      "url": "/app/pos-terminal"
     },
     {
       "label": "POS Invoice",

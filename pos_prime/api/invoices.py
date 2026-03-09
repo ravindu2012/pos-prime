@@ -112,6 +112,7 @@ def create_pos_invoice(
             "currency": profile.currency
             or frappe.defaults.get_defaults().get("currency", "USD"),
             "set_warehouse": profile.warehouse,
+            "update_stock": getattr(profile, "update_stock", 0),
             "account_for_change_amount": profile.account_for_change_amount
             or profile.write_off_account,
             "write_off_account": profile.write_off_account,
@@ -271,6 +272,15 @@ def create_pos_invoice(
 
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()
+
+    # When "Validate Stock on Save" is unchecked, bypass ERPNext's
+    # validate_stock_availablility() which runs on both insert and submit.
+    # The method only skips for drafts; during submit it always runs and
+    # checks is_negative_stock_allowed() from Stock Settings — which our
+    # old frappe.flags.allow_negative_stock approach could not override.
+    if not profile.validate_stock_on_save:
+        invoice.validate_stock_availablility = lambda: None
+
     invoice.insert()
     invoice.submit()
 

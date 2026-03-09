@@ -135,7 +135,10 @@ export const useCustomerStore = defineStore('customer', () => {
     customer_name: string
     mobile_no?: string
     email_id?: string
+    customer_type?: string
+    customer_group?: string
     pos_profile?: string
+    [key: string]: string | undefined
   }) {
     loading.value = true
     try {

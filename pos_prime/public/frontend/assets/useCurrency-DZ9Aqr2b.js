@@ -1,2 +1,0 @@
-import{useSettingsStore as u}from"./settings-ChtEuznb.js";const e=new Map,i=new Intl.NumberFormat(void 0,{minimumFractionDigits:2,maximumFractionDigits:2});function a(r){let t=e.get(r);if(!t){try{t=new Intl.NumberFormat(void 0,{style:"currency",currency:r,minimumFractionDigits:2,maximumFractionDigits:2})}catch{t=i}e.set(r,t)}return t}function s(){const r=u();function t(n){const o=r.currency||"USD";return a(o).format(n)}function m(n){return i.format(n)}return{formatCurrency:t,formatNumber:m}}export{s as u};
-//# sourceMappingURL=useCurrency-DZ9Aqr2b.js.map

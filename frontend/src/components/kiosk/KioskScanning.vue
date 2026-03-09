@@ -2,6 +2,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useItemsStore } from '@/stores/items'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps<{
   formatCurrency: (value: number) => string
@@ -13,6 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const cartStore = useCartStore()
+const settingsStore = useSettingsStore()
 const itemsStore = useItemsStore()
 const lastScanned = ref<string | null>(null)
 const scanError = ref<string | null>(null)
@@ -62,14 +64,14 @@ async function submitManualBarcode() {
     const result = await itemsStore.searchByBarcode(manualBarcode.value.trim())
     if (result) {
       // Check stock availability for stock items
-      if (result.is_stock_item && result.actual_qty !== undefined && result.actual_qty <= 0) {
+      if (settingsStore.validateStockOnSave && result.is_stock_item && result.actual_qty !== undefined && result.actual_qty <= 0) {
         scanError.value = `${result.item_name} is out of stock`
         manualBarcode.value = ''
         nextTick(() => manualInputRef.value?.focus())
         setTimeout(() => { scanError.value = null }, 4000)
         return
       }
-      cartStore.addItem(result)
+      cartStore.addItem(result, settingsStore.validateStockOnSave)
       manualBarcode.value = ''
       lastScanned.value = result.item_name
       setTimeout(() => { lastScanned.value = null }, 2000)

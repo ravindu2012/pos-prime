@@ -54,6 +54,26 @@ function injectFrappeContext(): Plugin {
         ].join('\n')
       )
 
+      // Redirect core POS routes to desk page; keep standalone for display/kiosk/customers
+      // Uses desk_prefix from www/pos_prime.py context (v16+ = /desk, v14-v15 = /app)
+      html = html.replace(
+        '<div id="app">',
+        [
+          '<script>',
+          '  (function() {',
+          '    var p = window.location.pathname.replace(/\\/$/, "");',
+          '    var standalone = ["/pos-prime/display", "/pos-prime/kiosk", "/pos-prime/customers"];',
+          '    var isStandalone = standalone.some(function(s) { return p.startsWith(s); });',
+          '    if (!isStandalone && p.startsWith("/pos-prime")) {',
+          '      window.location.replace("{{ desk_prefix }}/pos-terminal");',
+          '      return;',
+          '    }',
+          '  })();',
+          '</script>',
+          '<div id="app">',
+        ].join('\n  ')
+      )
+
       return html
     },
   }
@@ -80,6 +100,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
+  },
+  build: {
+    manifest: true,
   },
   optimizeDeps: {
     include: ['frappe-ui > feather-icons', 'showdown', 'engine.io-client'],

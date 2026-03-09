@@ -21,6 +21,7 @@ import {
   Loader2,
   Clock,
 } from 'lucide-vue-next'
+import { deskUrl } from '@/utils/deskUrl'
 
 const router = useRouter()
 const route = useRoute()
@@ -90,7 +91,7 @@ function formatDate(dateStr: string) {
       <!-- Header -->
       <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center gap-3">
         <button
-          @click="mobileShowDetail ? (mobileShowDetail = false) : router.push('/pos-prime')"
+          @click="mobileShowDetail ? (mobileShowDetail = false) : router.push({ name: 'POS' })"
           class="lg:hidden text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         >
           <ArrowLeft :size="20" />
@@ -251,7 +252,7 @@ function formatDate(dateStr: string) {
                   </div>
                 </div>
                 <a
-                  :href="`/app/customer/${store.selectedCustomer.name}`"
+                  :href="deskUrl(`customer/${store.selectedCustomer.name}`)"
                   target="_blank"
                   class="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                 >
@@ -420,7 +421,7 @@ function formatDate(dateStr: string) {
                     >
                       <td class="py-2 pr-3">
                         <a
-                          :href="`/app/pos-invoice/${inv.name}`"
+                          :href="deskUrl(`pos-invoice/${inv.name}`)"
                           target="_blank"
                           class="text-blue-600 dark:text-blue-400 hover:underline"
                         >

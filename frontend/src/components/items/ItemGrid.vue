@@ -8,9 +8,13 @@ import { useBarcodeScanner } from '@/composables/useBarcodeScanner'
 import ItemCard from './ItemCard.vue'
 import ItemSearch from './ItemSearch.vue'
 import ItemGroupFilter from './ItemGroupFilter.vue'
+import BatchSerialSelector from './BatchSerialSelector.vue'
 import CameraScanner from '@/components/scanner/CameraScanner.vue'
 import { Package, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
+import { useDeskMode } from '@/composables/useDeskMode'
 import type { Item } from '@/types'
+
+const { isDeskMode } = useDeskMode()
 
 const itemsStore = useItemsStore()
 const cartStore = useCartStore()
@@ -25,23 +29,30 @@ function toggleCategories() {
   localStorage.setItem('pos_show_categories', String(showCategories.value))
 }
 
+function delayedUpdateColumnCount() {
+  // Delay to let sidebar CSS transition finish before measuring
+  setTimeout(updateColumnCount, 300)
+}
+
 onMounted(() => {
   itemsStore.fetchItemGroups()
   itemsStore.fetchAllItems()
   updateColumnCount()
   window.addEventListener('resize', updateColumnCount)
+  // Adapt when Frappe desk sidebar is toggled
+  $(document.body).on('toggleSidebar', delayedUpdateColumnCount)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateColumnCount)
+  $(document.body).off('toggleSidebar', delayedUpdateColumnCount)
 })
 
 function updateColumnCount() {
   const width = scrollContainer.value?.clientWidth || window.innerWidth
   if (width < 640) columnCount.value = 2
   else if (width < 768) columnCount.value = 3
-  else if (width < 1280) columnCount.value = 4
-  else columnCount.value = 5
+  else columnCount.value = 4
 }
 
 // Group filtered items into rows for virtual scrolling
@@ -59,7 +70,7 @@ const virtualizer = useVirtualizer(
   computed(() => ({
     count: rows.value.length,
     getScrollElement: () => scrollContainer.value,
-    estimateSize: () => settingsStore.hideImages ? 90 : 240,
+    estimateSize: () => settingsStore.hideImages ? 70 : (isDeskMode.value ? 185 : 200),
     overscan: 5,
   }))
 )
@@ -73,7 +84,8 @@ watch(
       itemsStore.filteredItems.length === 1 &&
       itemsStore.searchTerm
     ) {
-      cartStore.addItem(itemsStore.filteredItems[0])
+      const err = cartStore.addItem(itemsStore.filteredItems[0], settingsStore.validateStockOnSave)
+      if (err) showStockError(err)
       itemsStore.setSearchTerm('')
     }
   }
@@ -87,8 +99,51 @@ function onGroupSelect(group: string) {
   itemsStore.setSelectedGroup(group)
 }
 
+// Batch/Serial selector state
+const batchSerialItem = ref<Item | null>(null)
+
+function showStockError(msg: string) {
+  const frappe = (window as any).frappe
+  if (frappe?.show_alert) {
+    frappe.show_alert({ message: msg, indicator: 'orange' }, 3)
+  }
+}
+
 function onItemSelect(item: Item) {
-  cartStore.addItem(item)
+  if (item.has_batch_no || item.has_serial_no) {
+    // Show batch/serial selector dialog
+    batchSerialItem.value = item
+    return
+  }
+  const err = cartStore.addItem(item, settingsStore.validateStockOnSave)
+  if (err) showStockError(err)
+}
+
+function onBatchSerialConfirm(batchNo: string | null, serialNo: string | null) {
+  const item = batchSerialItem.value
+  if (!item) return
+
+  // For serial items, serials may span multiple batches — auto-split
+  if (serialNo && item.has_batch_no && item.has_serial_no && !batchNo) {
+    // This case shouldn't happen with current UI (batch is required first),
+    // but handle it for safety
+    cartStore.addItem(item, settingsStore.validateStockOnSave)
+    const lastIndex = cartStore.items.length - 1
+    cartStore.updateItemBatchSerial(lastIndex, null, serialNo)
+  } else {
+    // Normal case: add item and set batch/serial
+    cartStore.addItem(item, settingsStore.validateStockOnSave)
+    const lastIndex = cartStore.items.length - 1
+    cartStore.updateItemBatchSerial(lastIndex, batchNo, serialNo)
+    // Set qty from serial count if serials were selected
+    if (serialNo) {
+      const serialCount = serialNo.split('\n').filter(s => s.trim()).length
+      if (serialCount > 1) {
+        cartStore.updateQty(lastIndex, serialCount)
+      }
+    }
+  }
+  batchSerialItem.value = null
 }
 
 // Hardware barcode scanner integration
@@ -98,27 +153,31 @@ async function handleBarcodeScan(barcode: string) {
     // Find item in full list or create minimal item for cart
     const existingItem = itemsStore.allItems.find((i) => i.item_code === result.item_code)
     if (existingItem) {
-      cartStore.addItem(existingItem)
+      const err = cartStore.addItem(existingItem, settingsStore.validateStockOnSave)
+      if (err) { showStockError(err); return }
     } else {
       // Add as minimal item — the backend will resolve full details
-      cartStore.addItem({
+      const err = cartStore.addItem({
         item_code: result.item_code,
         item_name: result.item_name || result.item_code,
         rate: result.rate || 0,
-        actual_qty: 0,
-        stock_uom: result.uom || 'Nos',
+        actual_qty: result.actual_qty || 0,
+        is_stock_item: result.is_stock_item ?? true,
+        stock_uom: result.stock_uom || 'Nos',
         description: '',
         item_group: '',
         image: null,
         currency: settingsStore.currency,
-        has_batch_no: !!result.batch_no,
-        has_serial_no: !!result.serial_no,
+        has_batch_no: !!result.batch_no || !!result.has_batch_no,
+        has_serial_no: !!result.serial_no || !!result.has_serial_no,
         brand: null,
         weight_per_unit: null,
         weight_uom: null,
         barcode: result.barcode || null,
         item_tax_template: null,
-      })
+        is_product_bundle: false,
+      }, settingsStore.validateStockOnSave)
+      if (err) { showStockError(err); return }
 
       // If scanned item has batch/serial info, update the cart item
       if (result.batch_no || result.serial_no) {
@@ -130,6 +189,12 @@ async function handleBarcodeScan(barcode: string) {
         )
       }
     }
+
+    // Apply barcode-specific UOM if returned by backend
+    if (result.barcode_uom) {
+      const lastIndex = cartStore.items.length - 1
+      cartStore.updateItemUom(lastIndex, result.barcode_uom, result.barcode_conversion_factor || 1)
+    }
   }
 }
 
@@ -139,20 +204,34 @@ function onCameraScan(value: string) {
   showCameraScanner.value = false
   handleBarcodeScan(value)
 }
+
+// Display label: show selected group or "All Items"
+const headerLabel = computed(() => {
+  return itemsStore.selectedGroup === 'All Item Groups'
+    ? __('All Items')
+    : itemsStore.selectedGroup || __('All Items')
+})
 </script>
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2">
-      <button
-        v-if="itemsStore.itemGroups.length > 1"
-        class="hidden lg:flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-        :title="showCategories ? __('Hide categories') : __('Show categories')"
-        @click="toggleCategories"
-      >
-        <PanelLeftClose v-if="showCategories" :size="18" />
-        <PanelLeftOpen v-else :size="18" />
-      </button>
+    <!-- Filter section — ERPNext-style: label + search + category toggle -->
+    <div class="flex items-center gap-2 px-3 py-2">
+      <!-- Section label (like ERPNext's "All Items") -->
+      <div class="hidden sm:flex items-center gap-2 shrink-0">
+        <button
+          v-if="itemsStore.itemGroups.length > 1"
+          class="hidden lg:flex items-center justify-center shrink-0 w-7 h-7 rounded-md text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          :title="showCategories ? __('Hide categories') : __('Show categories')"
+          @click="toggleCategories"
+        >
+          <PanelLeftClose v-if="showCategories" :size="16" />
+          <PanelLeftOpen v-else :size="16" />
+        </button>
+        <span class="text-base font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{{ headerLabel }}</span>
+      </div>
+
+      <!-- Search -->
       <ItemSearch
         class="flex-1"
         :model-value="itemsStore.searchTerm"
@@ -184,7 +263,7 @@ function onCameraScan(value: string) {
 
       <div
         ref="scrollContainer"
-        class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900"
+        class="flex-1 overflow-y-auto"
       >
         <div
           v-if="itemsStore.loading && itemsStore.allItems.length === 0"
@@ -218,9 +297,13 @@ function onCameraScan(value: string) {
               width: '100%',
               transform: `translateY(${virtualRow.start}px)`,
             }"
-            class="px-3"
+            style="padding-left: var(--padding-sm, 8px); padding-right: var(--padding-sm, 8px);"
           >
-            <div class="grid gap-3 pb-3" :style="{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }">
+            <div
+              class="grid pb-2"
+              style="gap: var(--margin-sm, 8px);"
+              :style="{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }"
+            >
               <ItemCard
                 v-for="item in rows[virtualRow.index]"
                 :key="item.item_code"
@@ -238,6 +321,17 @@ function onCameraScan(value: string) {
       v-if="showCameraScanner"
       @scan="onCameraScan"
       @close="showCameraScanner = false"
+    />
+
+    <!-- Batch/Serial selector dialog -->
+    <BatchSerialSelector
+      v-if="batchSerialItem"
+      :item-code="batchSerialItem.item_code"
+      :item-name="batchSerialItem.item_name"
+      :has-batch-no="batchSerialItem.has_batch_no"
+      :has-serial-no="batchSerialItem.has_serial_no"
+      @confirm="onBatchSerialConfirm"
+      @close="batchSerialItem = null"
     />
   </div>
 </template>

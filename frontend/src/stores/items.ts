@@ -19,7 +19,8 @@ export const useItemsStore = defineStore('items', () => {
       keys: [
         { name: 'item_name', weight: 0.5 },
         { name: 'item_code', weight: 0.3 },
-        { name: 'barcode', weight: 0.2 },
+        { name: 'barcode', weight: 0.15 },
+        { name: 'barcodes', weight: 0.15 },
       ],
       threshold: 0.4,
       distance: 200,

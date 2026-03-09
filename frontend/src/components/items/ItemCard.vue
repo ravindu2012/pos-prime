@@ -20,16 +20,16 @@ const { formatCurrency } = useCurrency()
   <button
     @click="emit('select', props.item)"
     :aria-label="`Add ${props.item.item_name} to cart`"
-    class="group relative flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md dark:hover:shadow-blue-900/10 transition-all duration-200 text-left"
+    class="pos-card group relative flex flex-col rounded-lg overflow-hidden hover:scale-[1.02] transition-all duration-200 text-left"
   >
     <!-- Image -->
-    <div v-if="!settingsStore.hideImages" class="relative aspect-square bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+    <div v-if="!settingsStore.hideImages" class="relative h-32 min-h-[8rem] bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
       <img
         v-if="item.image"
         :src="item.image"
         :alt="item.item_name"
         loading="lazy"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        class="w-full h-full object-cover"
       />
       <Package v-else class="text-gray-200 dark:text-gray-700" :size="36" />
 
@@ -65,13 +65,16 @@ const { formatCurrency } = useCurrency()
     </div>
 
     <!-- Item Info -->
-    <div class="p-2.5 flex-1 flex flex-col">
+    <div class="px-2 py-1.5 flex-1 flex flex-col min-h-[3rem]">
       <div class="text-xs font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug">
         {{ item.item_name }}
       </div>
-      <div class="mt-auto pt-1.5">
-        <span class="text-sm font-bold text-blue-600 dark:text-blue-400">
+      <div class="mt-auto pt-1">
+        <span class="text-sm font-bold text-gray-900 dark:text-gray-100">
           {{ formatCurrency(item.rate) }}
+        </span>
+        <span v-if="item.stock_uom" class="text-[10px] text-gray-400 dark:text-gray-500 ml-0.5">
+          / {{ item.stock_uom }}
         </span>
       </div>
     </div>

@@ -5,8 +5,13 @@ from pos_prime.api._utils import validate_pos_access
 
 @frappe.whitelist()
 def get_batch_nos(item_code, warehouse):
-    """Get available batches for an item in a warehouse with qty and expiry."""
+    """Get available batches for an item in a warehouse with qty and expiry.
+
+    Supports both legacy batch_no on SLE (v14) and serial_and_batch_bundle (v15+).
+    """
     validate_pos_access()
+
+    # Try legacy SLE batch_no first
     batches = frappe.db.sql(
         """
         SELECT
@@ -19,6 +24,7 @@ def get_batch_nos(item_code, warehouse):
         WHERE sle.item_code = %(item_code)s
             AND sle.warehouse = %(warehouse)s
             AND sle.is_cancelled = 0
+            AND sle.batch_no IS NOT NULL AND sle.batch_no != ''
             AND b.disabled = 0
             AND (b.expiry_date IS NULL OR b.expiry_date >= CURDATE())
         GROUP BY sle.batch_no
@@ -29,7 +35,37 @@ def get_batch_nos(item_code, warehouse):
         as_dict=True,
     )
 
-    return batches
+    if batches:
+        return batches
+
+    # v15+: batch info stored via Serial and Batch Bundle
+    if frappe.db.has_column("Stock Ledger Entry", "serial_and_batch_bundle"):
+        batches = frappe.db.sql(
+            """
+            SELECT
+                sbe.batch_no,
+                SUM(sbe.qty) as qty,
+                b.expiry_date,
+                b.batch_qty
+            FROM `tabStock Ledger Entry` sle
+            INNER JOIN `tabSerial and Batch Entry` sbe
+                ON sbe.parent = sle.serial_and_batch_bundle
+            INNER JOIN `tabBatch` b ON b.name = sbe.batch_no
+            WHERE sle.item_code = %(item_code)s
+                AND sle.warehouse = %(warehouse)s
+                AND sle.is_cancelled = 0
+                AND sle.serial_and_batch_bundle IS NOT NULL
+                AND b.disabled = 0
+                AND (b.expiry_date IS NULL OR b.expiry_date >= CURDATE())
+            GROUP BY sbe.batch_no
+            HAVING SUM(sbe.qty) > 0
+            ORDER BY b.expiry_date ASC, b.creation ASC
+            """,
+            {"item_code": item_code, "warehouse": warehouse},
+            as_dict=True,
+        )
+
+    return batches or []
 
 
 @frappe.whitelist()

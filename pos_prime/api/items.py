@@ -51,7 +51,7 @@ def get_items(
         group_filter_list = list(all_groups) if all_groups else None
 
     # ── Build SQL query ──────────────────────────────────────────────
-    conditions = ["i.disabled = 0", "i.is_sales_item = 1", "i.has_variants = 0"]
+    conditions = ["i.disabled = 0", "i.is_sales_item = 1", "i.has_variants = 0", "i.is_fixed_asset = 0"]
     values = {}
 
     if group_filter_list:
@@ -150,8 +150,7 @@ def get_items(
         fields=["parent", "barcode"],
         order_by="idx asc",
     ):
-        if b.parent not in barcodes:
-            barcodes[b.parent] = b.barcode
+        barcodes.setdefault(b.parent, []).append(b.barcode)
 
     # ── Batch fetch tax templates ────────────────────────────────────
     tax_templates = {}
@@ -200,7 +199,8 @@ def get_items(
     for item in items:
         item["rate"] = prices.get(item.item_code, 0)
         item["currency"] = currency
-        item["barcode"] = barcodes.get(item.item_code)
+        item["barcodes"] = barcodes.get(item.item_code, [])
+        item["barcode"] = item["barcodes"][0] if item["barcodes"] else None
         item["item_tax_template"] = tax_templates.get(item.item_code)
 
         if item.item_code in bundle_set:
@@ -258,7 +258,7 @@ def search_barcode(search_value, pos_profile=""):
     barcode_data = frappe.get_all(
         "Item Barcode",
         filters={"barcode": search_value},
-        fields=["parent as item_code", "barcode"],
+        fields=["parent as item_code", "barcode", "uom"],
         limit=1,
     )
     if barcode_data:
@@ -268,6 +268,17 @@ def search_barcode(search_value, pos_profile=""):
              "item_group", "disabled", "has_variants"], as_dict=True)
         if item and not item.disabled and not item.has_variants:
             result = {**item, "barcode": search_value}
+            # Apply barcode-specific UOM if defined
+            barcode_uom = barcode_data[0].get("uom")
+            if barcode_uom and barcode_uom != item.stock_uom:
+                result["barcode_uom"] = barcode_uom
+                # Fetch conversion factor for the barcode UOM
+                uom_row = frappe.db.get_value(
+                    "UOM Conversion Detail",
+                    {"parent": item.item_code, "uom": barcode_uom},
+                    "conversion_factor",
+                )
+                result["barcode_conversion_factor"] = uom_row or 1
 
     # Check Item Code directly
     if not result:

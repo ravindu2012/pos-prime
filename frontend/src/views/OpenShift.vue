@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
+import { useDeskMode } from '@/composables/useDeskMode'
 import { LogIn, Calculator } from 'lucide-vue-next'
 import DenominationCalculator from '@/components/shift/DenominationCalculator.vue'
 
@@ -11,6 +12,7 @@ const router = useRouter()
 const sessionStore = usePosSessionStore()
 const settingsStore = useSettingsStore()
 const { formatCurrency } = useCurrency()
+const { isDeskMode } = useDeskMode()
 
 const selectedProfile = ref('')
 const company = ref('')
@@ -38,7 +40,7 @@ function onDenomApply(value: number) {
 onMounted(async () => {
   const data = await settingsStore.fetchPOSProfiles()
   if (data?.openEntry) {
-    router.replace('/pos-prime')
+    router.replace({ name: 'POS' })
     return
   }
   if (settingsStore.posProfiles.length === 1) {
@@ -96,7 +98,7 @@ async function openShift() {
       balance_details: openingBalances.value,
     })
     await settingsStore.loadPOSProfile(selectedProfile.value)
-    router.replace('/pos-prime')
+    router.replace({ name: 'POS' })
   } catch (e: any) {
     error.value = e.messages?.[0] || e.message || 'Failed to open shift'
   } finally {
@@ -106,7 +108,7 @@ async function openShift() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+  <div :class="['bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4', isDeskMode ? 'min-h-full' : 'min-h-screen']">
     <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
       <div class="flex items-center gap-3 mb-6">
         <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30">

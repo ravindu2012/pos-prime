@@ -1,0 +1,17 @@
+{
+ "creation": "2024-01-01 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POS Prime",
+ "name": "pos-terminal",
+ "owner": "Administrator",
+ "page_name": "pos-terminal",
+ "roles": [],
+ "single_column": 1,
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "POS Prime"
+}

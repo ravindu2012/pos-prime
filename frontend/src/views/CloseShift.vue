@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { usePosSessionStore } from '@/stores/posSession'
 import { useSettingsStore } from '@/stores/settings'
 import { useCurrency } from '@/composables/useCurrency'
+import { useDeskMode } from '@/composables/useDeskMode'
 import { call } from 'frappe-ui'
 import { LogOut, Calculator } from 'lucide-vue-next'
 import DenominationCalculator from '@/components/shift/DenominationCalculator.vue'
@@ -12,6 +13,7 @@ const router = useRouter()
 const sessionStore = usePosSessionStore()
 const settingsStore = useSettingsStore()
 const { formatCurrency } = useCurrency()
+const { isDeskMode } = useDeskMode()
 
 const denomCalcIndex = ref(-1)
 const showDenomCalc = ref(false)
@@ -50,7 +52,7 @@ const error = ref('')
 
 onMounted(async () => {
   if (!sessionStore.hasOpenShift) {
-    router.replace('/pos-prime/open')
+    router.replace({ name: 'OpenShift' })
     return
   }
   await loadSummary()
@@ -102,7 +104,7 @@ async function handleCloseShift() {
         closing_amount: ps.closing_amount,
       }))
     )
-    router.replace('/pos-prime/open')
+    router.replace({ name: 'OpenShift' })
   } catch (e: any) {
     error.value = e.messages?.[0] || e.message || 'Failed to close shift'
   } finally {
@@ -112,7 +114,7 @@ async function handleCloseShift() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+  <div :class="['bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4', isDeskMode ? 'min-h-full' : 'min-h-screen']">
     <div class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
       <div class="flex items-center gap-3 mb-6">
         <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/30">
@@ -221,7 +223,7 @@ async function handleCloseShift() {
 
         <div class="flex gap-3">
           <button
-            @click="router.push('/pos-prime')"
+            @click="router.push({ name: 'POS' })"
             class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             {{ __('Cancel') }}

@@ -67,6 +67,7 @@ export interface Item {
   weight_per_unit: number | null
   weight_uom: string | null
   barcode: string | null
+  barcodes?: string[]
   item_tax_template: string | null
   is_product_bundle: boolean
 }

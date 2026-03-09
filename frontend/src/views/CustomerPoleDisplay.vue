@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { call } from 'frappe-ui'
 import {
@@ -24,6 +24,7 @@ const companyName = ref<string | null>(null)
 const companyLogo = ref<string | null>(null)
 const currency = ref<string>('USD')
 
+const poleCartItems = ref<HTMLElement | null>(null)
 const mobileInput = ref('')
 const mobileStatus = ref<'idle' | 'searching' | 'found' | 'not_found'>('idle')
 const foundCustomerName = ref<string | null>(null)
@@ -133,6 +134,15 @@ onMounted(() => {
         state.value = 'cart'
         cartData.value = message.payload
         if (message.payload.companyName) companyName.value = message.payload.companyName
+        // Auto-scroll cart to bottom
+        nextTick(() => {
+          if (poleCartItems.value) {
+            poleCartItems.value.scrollTo({
+              top: poleCartItems.value.scrollHeight,
+              behavior: 'smooth',
+            })
+          }
+        })
         break
       case 'payment_start':
         state.value = 'payment'
@@ -274,7 +284,7 @@ function enterFullscreen() {
         </div>
 
         <!-- Scrollable item list -->
-        <div class="cart-items">
+        <div ref="poleCartItems" class="cart-items">
           <TransitionGroup name="item-list" tag="div">
             <div v-for="(item, i) in cartData.items" :key="item.item_name + '-' + i" class="cart-item" :class="{ 'cart-item--free': item.is_free_item }">
               <div class="cart-item-info">

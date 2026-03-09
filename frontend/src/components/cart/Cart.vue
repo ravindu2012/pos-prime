@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useCustomerStore } from '@/stores/customer'
 import { usePaymentStore } from '@/stores/payment'
@@ -13,6 +13,7 @@ import InvoiceDiscount from './InvoiceDiscount.vue'
 import InvoiceOptions from './InvoiceOptions.vue'
 import NumPad from './NumPad.vue'
 import CustomerSelector from '@/components/customer/CustomerSelector.vue'
+import CustomerDetailPanel from '@/components/customer/CustomerDetailPanel.vue'
 import { ShoppingCart, CreditCard, Pause, Check } from 'lucide-vue-next'
 
 const { isTouchDevice } = useTouchDevice()
@@ -108,6 +109,24 @@ function openPayment() {
   paymentStore.openPaymentDialog()
 }
 
+const showCustomerDetail = ref(false)
+const cartScrollContainer = ref<HTMLElement | null>(null)
+
+// Auto-scroll cart to bottom when items are added
+watch(
+  () => cartStore.items.length,
+  () => {
+    nextTick(() => {
+      if (cartScrollContainer.value) {
+        cartScrollContainer.value.scrollTo({
+          top: cartScrollContainer.value.scrollHeight,
+          behavior: 'smooth',
+        })
+      }
+    })
+  }
+)
+
 const emit = defineEmits<{
   holdOrder: []
 }>()
@@ -115,24 +134,38 @@ const emit = defineEmits<{
 
 <template>
   <div class="flex flex-col h-full bg-white dark:bg-gray-900">
-    <!-- Customer selector -->
-    <div class="p-3 border-b border-gray-100 dark:border-gray-800">
-      <CustomerSelector />
+    <!-- Customer section (ERPNext-style: separate area at top) -->
+    <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+      <CustomerSelector @open-detail="showCustomerDetail = true" />
+    </div>
+
+    <!-- Customer detail panel -->
+    <CustomerDetailPanel
+      v-if="showCustomerDetail && customerStore.customer"
+      @close="showCustomerDetail = false"
+    />
+
+    <!-- Cart label + column headers (ERPNext-style) -->
+    <div class="px-3 pt-2 pb-1.5">
+      <div class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1.5">{{ __('Cart') }}</div>
+      <div v-if="cartStore.items.length > 0" class="flex items-center text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        <span class="flex-1">{{ __('Item') }}</span>
+        <span class="w-[88px] text-center">{{ __('Qty') }}</span>
+        <span class="w-[72px] text-right">{{ __('Amount') }}</span>
+        <span class="w-7" />
+      </div>
     </div>
 
     <!-- Cart items -->
-    <div class="flex-1 overflow-y-auto px-1.5 py-2">
+    <div ref="cartScrollContainer" class="flex-1 overflow-y-auto px-2 py-1">
       <div
         v-if="cartStore.items.length === 0"
-        class="flex flex-col items-center justify-center h-full"
+        class="flex flex-col items-center justify-center h-full rounded-lg bg-gray-100 dark:bg-gray-800"
       >
-        <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
-          <ShoppingCart :size="28" class="text-gray-300 dark:text-gray-600" />
-        </div>
-        <span class="text-sm font-medium text-gray-400 dark:text-gray-500">{{ __('Cart is empty') }}</span>
-        <span class="text-xs text-gray-300 dark:text-gray-600 mt-0.5">{{ __('Add items to get started') }}</span>
+        <ShoppingCart :size="28" class="text-gray-300 dark:text-gray-600 mb-2" />
+        <span class="text-sm font-medium text-gray-400 dark:text-gray-500">{{ __('No items in cart') }}</span>
       </div>
-      <TransitionGroup v-else name="cart-item" tag="div" class="space-y-0.5">
+      <TransitionGroup v-else name="cart-item" tag="div">
         <CartItemComp
           v-for="(item, index) in cartStore.items"
           :key="`${item.item_code}-${item.batch_no || ''}-${index}`"
@@ -210,26 +243,26 @@ const emit = defineEmits<{
       </div>
     </Transition>
 
-    <!-- Summary + Actions (sticky bottom) -->
+    <!-- Totals + Actions (sticky bottom, ERPNext-style) -->
     <div class="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
       <!-- Expandable extras -->
-      <div v-if="cartStore.items.length > 0" class="px-3 pt-2 space-y-1.5">
+      <div v-if="cartStore.items.length > 0" class="px-3 pt-1.5 space-y-1">
         <InvoiceDiscount />
         <CouponCodeInput />
         <InvoiceOptions />
       </div>
 
       <!-- Summary -->
-      <div class="px-3 pt-2 pb-2">
+      <div class="px-3 pt-1.5 pb-1.5">
         <CartSummary />
       </div>
 
       <!-- Action Buttons -->
-      <div class="px-3 pb-3 flex gap-2">
+      <div class="px-3 pb-2 flex gap-2">
         <button
           @click="emit('holdOrder')"
           :disabled="cartStore.items.length === 0"
-          class="py-3 px-4 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-xl text-sm font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-1.5"
+          class="py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-150 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
           title="Hold Order"
         >
           <Pause :size="16" />
@@ -237,13 +270,13 @@ const emit = defineEmits<{
         <button
           @click="openPayment"
           :disabled="cartStore.items.length === 0 || !customerStore.customer"
-          class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
+          class="checkout-btn flex-1 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed"
           :class="cartStore.items.length > 0 && customerStore.customer
-            ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
+            ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+            : 'bg-blue-300 dark:bg-blue-800 opacity-70'"
         >
           <CreditCard :size="16" />
-          {{ __('Pay') }} {{ cartStore.items.length > 0 ? formatCurrency(cartStore.roundedTotal) : '' }}
+          {{ __('Checkout') }} {{ cartStore.items.length > 0 ? formatCurrency(cartStore.roundedTotal) : '' }}
         </button>
       </div>
     </div>

@@ -28,7 +28,7 @@ const filteredGroups = computed(() => {
   <!-- Desktop sidebar list -->
   <div
     v-if="mode === 'desktop'"
-    class="w-48 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-100 dark:border-gray-800 flex flex-col"
+    class="shrink-0 w-44 bg-white dark:bg-gray-900 border-e border-gray-100 dark:border-gray-800 flex flex-col"
   >
     <div class="p-2 flex flex-col min-h-0 flex-1">
       <div class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-3 py-2">
@@ -50,12 +50,12 @@ const filteredGroups = computed(() => {
           v-for="group in filteredGroups"
           :key="group"
           @click="emit('select', group)"
-          class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-150"
-          :class="
+          class="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-all duration-150"
+          :class="[
             selected === group
               ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-semibold'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200'
-          "
+          ]"
         >
           {{ group }}
         </button>

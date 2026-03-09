@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "vue-tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npx playwright test",
+    "test:v15": "npx playwright test --project=v15",
+    "test:v14": "npx playwright test --project=v14",
+    "test:v16": "npx playwright test --project=v16",
+    "test:report": "npx playwright show-report"
   },
   "dependencies": {
     "@tanstack/vue-virtual": "^3.13.21",
@@ -23,6 +28,8 @@
   },
   "devDependencies": {
     "@iconify/json": "^2.2.445",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.5",
     "@vitejs/plugin-vue": "^5.0.3",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.33",

@@ -14,7 +14,7 @@ add_to_apps_screen = [
 		"name": "pos_prime",
 		"logo": "/assets/pos_prime/manifest/pos-prime-logo.png",
 		"title": "POS Prime",
-		"route": "/pos-prime",
+		"route": "/app/pos-terminal",  # Frappe resolves this; v16 uses /desk/ automatically
 	}
 ]
 

@@ -12,6 +12,7 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { useBroadcastDisplay, type DisplayMessage } from '@/composables/useBroadcastDisplay'
 import { call } from 'frappe-ui'
 import { useSerialDisplay } from '@/composables/useSerialDisplay'
+import { useDeskMode } from '@/composables/useDeskMode'
 import AppShell from '@/components/layout/AppShell.vue'
 import ItemGrid from '@/components/items/ItemGrid.vue'
 import Cart from '@/components/cart/Cart.vue'
@@ -33,40 +34,42 @@ const itemsStore = useItemsStore()
 // Customer display — scoped by POS Opening Entry so multiple sessions don't conflict
 const { sendUpdate: sendDisplayUpdate, onUpdate: onDisplayMessage, close: closeDisplay } = useBroadcastDisplay(sessionStore.openingEntry || undefined)
 const serialDisplay = useSerialDisplay()
+const { isDeskMode } = useDeskMode()
 
 const mobileTab = ref<'items' | 'cart'>('items')
 const showReceipt = ref(false)
 const showHeldOrders = ref(false)
 const showReturnDialog = ref(false)
 
-// Resizable cart panel
-const CART_MIN = 300
-const CART_MAX = 600
-const CART_DEFAULT = 380
-const cartWidth = ref(parseInt(localStorage.getItem('pos_cart_width') || '') || CART_DEFAULT)
-let resizing = false
+// Resizable cart panel (percentage-based, persisted)
+const CART_MIN_PCT = 25
+const CART_MAX_PCT = 50
+const CART_DEFAULT_PCT = 40  // ERPNext default: 4/10 = 40%
+const cartPct = ref(parseInt(localStorage.getItem('pos_cart_pct') || '') || CART_DEFAULT_PCT)
 
 function onResizeStart(e: PointerEvent) {
-  resizing = true
-  const startX = e.clientX
-  const startW = cartWidth.value
   const target = e.currentTarget as HTMLElement
   target.setPointerCapture(e.pointerId)
+  const container = target.closest('.pos-layout') as HTMLElement
+  if (!container) return
+  const containerWidth = container.clientWidth
+  const startX = e.clientX
+  const startPct = cartPct.value
 
   function onMove(ev: PointerEvent) {
-    if (!resizing) return
-    const delta = startX - ev.clientX // dragging left = wider cart
-    cartWidth.value = Math.min(CART_MAX, Math.max(CART_MIN, startW + delta))
+    const deltaPx = startX - ev.clientX
+    const deltaPct = (deltaPx / containerWidth) * 100
+    cartPct.value = Math.min(CART_MAX_PCT, Math.max(CART_MIN_PCT, Math.round(startPct + deltaPct)))
   }
   function onUp() {
-    resizing = false
-    localStorage.setItem('pos_cart_width', String(cartWidth.value))
+    localStorage.setItem('pos_cart_pct', String(cartPct.value))
     target.removeEventListener('pointermove', onMove)
     target.removeEventListener('pointerup', onUp)
   }
   target.addEventListener('pointermove', onMove)
   target.addEventListener('pointerup', onUp)
 }
+
 const loading = ref(true)
 
 // Keyboard shortcuts
@@ -83,7 +86,7 @@ useKeyboardShortcuts({
     else if (showHeldOrders.value) showHeldOrders.value = false
     else if (showReturnDialog.value) showReturnDialog.value = false
   },
-  onOpenOrders: () => router.push('/pos-prime/orders'),
+  onOpenOrders: () => router.push({ name: 'Orders' }),
   onNewOrder: () => startNewOrder(),
   onFocusSearch: () => {
     const searchInput = document.querySelector('[aria-label="Search items"]') as HTMLInputElement
@@ -223,14 +226,13 @@ watch(
 
 // Broadcast cart updates to customer display
 watch(
-  () => [
-    cartStore.items.length,
-    cartStore.grandTotal,
-    cartStore.totalItems,
-    cartStore.subtotal,
-    cartStore.taxAmount,
-    cartStore.roundedTotal,
-    cartStore.discountValue,
+  [
+    () => cartStore.items,
+    () => cartStore.grandTotal,
+    () => cartStore.roundedTotal,
+    () => cartStore.taxAmount,
+    () => cartStore.discountValue,
+    () => customerStore.customer?.customer_name,
   ],
   () => {
     if (cartStore.items.length === 0) {
@@ -440,16 +442,18 @@ function onReturnCompleted() {
 </script>
 
 <template>
-  <div v-if="loading" class="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+  <div v-if="loading" :class="['flex items-center justify-center bg-gray-50 dark:bg-gray-900', isDeskMode ? 'h-full' : 'h-screen']">
     <div class="text-gray-400 dark:text-gray-500 text-sm">{{ __('Loading POS...') }}</div>
   </div>
 
   <AppShell v-else @toggle-held-orders="showHeldOrders = !showHeldOrders" @toggle-return="showReturnDialog = true">
-    <div class="flex h-full">
+    <!-- ERPNext-style layout with resizable panels -->
+    <div class="pos-layout flex h-full overflow-hidden" style="gap: var(--margin-md, 8px); padding: 0.5%;">
       <!-- Items panel -->
       <div
-        class="flex-1 flex flex-col overflow-hidden border-e border-gray-200 dark:border-gray-800"
+        class="flex flex-col overflow-hidden pos-card rounded-lg min-w-0"
         :class="{ 'hidden sm:flex': mobileTab === 'cart' }"
+        :style="{ flex: `${100 - cartPct} 1 0%` }"
       >
         <ItemGrid />
       </div>
@@ -460,14 +464,14 @@ function onReturnCompleted() {
         style="width: 6px;"
         @pointerdown.prevent="onResizeStart"
       >
-        <div class="w-0.5 h-8 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-400 group-active:bg-blue-500 transition-colors" />
+        <div class="w-1 h-8 rounded-full bg-gray-200 dark:bg-gray-700 group-hover:bg-blue-400 group-active:bg-blue-500 transition-colors" />
       </div>
 
       <!-- Cart panel -->
       <div
-        class="shrink-0 flex flex-col overflow-hidden max-sm:!w-full"
+        class="flex flex-col overflow-hidden pos-card rounded-lg min-w-0"
         :class="{ 'hidden sm:flex': mobileTab === 'items' }"
-        :style="{ width: `${cartWidth}px` }"
+        :style="{ flex: `${cartPct} 1 0%` }"
       >
         <Cart @hold-order="holdOrder" />
       </div>
@@ -524,3 +528,16 @@ function onReturnCompleted() {
     />
   </AppShell>
 </template>
+
+<style scoped>
+/* Mobile: stack panels */
+@media screen and (max-width: 640px) {
+  .pos-layout {
+    flex-direction: column;
+    padding: 4px !important;
+  }
+  .pos-layout > div {
+    flex: 1 1 auto !important;
+  }
+}
+</style>

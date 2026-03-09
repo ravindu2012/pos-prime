@@ -182,8 +182,8 @@ async function handleBarcodeScan(barcode: string) {
   const needsTransition = step.value === 'welcome' || step.value === 'phone_entry'
 
   if (result) {
-    // Check stock availability for stock items
-    if (result.is_stock_item && result.actual_qty !== undefined && result.actual_qty <= 0) {
+    // Check stock availability for stock items (only when validate_stock_on_save is enabled)
+    if (settingsStore.validateStockOnSave && result.is_stock_item && result.actual_qty !== undefined && result.actual_qty <= 0) {
       const msg = `${result.item_name} is out of stock`
       if (needsTransition) {
         step.value = 'scanning'
@@ -193,7 +193,7 @@ async function handleBarcodeScan(barcode: string) {
       }
       return
     }
-    cartStore.addItem(result)
+    cartStore.addItem(result, settingsStore.validateStockOnSave)
     if (needsTransition) {
       step.value = 'scanning'
       // Wait for out-in transition (250ms) + mount before calling exposed method

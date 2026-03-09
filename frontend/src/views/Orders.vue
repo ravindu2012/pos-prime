@@ -90,7 +90,7 @@ function handlePrint(invoiceName: string) {
     <div class="h-full flex flex-col">
       <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center gap-3">
         <button
-          @click="mobileShowDetail ? (mobileShowDetail = false) : router.push('/pos-prime')"
+          @click="mobileShowDetail ? (mobileShowDetail = false) : router.push({ name: 'POS' })"
           class="lg:hidden text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         >
           <ArrowLeft :size="20" />

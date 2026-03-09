@@ -87,7 +87,7 @@ def save_draft_invoice(
             "currency": profile.currency
             or frappe.defaults.get_defaults().get("currency", "USD"),
             "set_warehouse": profile.warehouse,
-            "update_stock": 1,
+            "update_stock": getattr(profile, "update_stock", 0),
             "account_for_change_amount": profile.account_for_change_amount
             or profile.write_off_account,
             "write_off_account": profile.write_off_account,
@@ -457,6 +457,12 @@ def update_and_submit_draft(
 
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()
+
+    # Bypass ERPNext's validate_stock_availablility() on submit when
+    # POS Profile has stock validation disabled
+    if not profile.validate_stock_on_save:
+        invoice.validate_stock_availablility = lambda: None
+
     invoice.save()
     invoice.submit()
 

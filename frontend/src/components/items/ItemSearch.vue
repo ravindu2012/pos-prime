@@ -70,7 +70,7 @@ function clear() {
       type="text"
       :placeholder="__('Search items... (F1 or /)')"
       aria-label="Search items"
-      class="flex-1 bg-transparent pl-2 pr-2 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none placeholder-gray-400 dark:placeholder-gray-500"
+      class="flex-1 bg-transparent pl-2 pr-2 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none placeholder-gray-400 dark:placeholder-gray-500"
     />
     <div class="flex items-center gap-0.5 mr-1.5">
       <button
