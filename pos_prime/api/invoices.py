@@ -295,6 +295,7 @@ def create_pos_invoice(
             invoice.append("advances", {
                 "reference_type": adv.reference_type,
                 "reference_name": adv.reference_name,
+                "reference_row": adv.get("reference_row") or None,
                 "advance_amount": flt(adv.amount),
                 "allocated_amount": alloc,
                 "remarks": adv.get("remarks", ""),
@@ -336,11 +337,15 @@ def create_pos_invoice(
     invoice.insert()
     invoice.submit()
 
-    # Allocate Payment Entries — reduce unallocated_amount to prevent double-spend
+    # Allocate advances — reduce unallocated_amount to prevent double-spend
+    # Payment Entries: reduce unallocated_amount directly
+    # Journal Entries: tracked via the advances child table (allocation subquery)
     if flt(invoice.total_advance) > 0:
         for adv_row in invoice.advances:
             allocated = flt(adv_row.allocated_amount)
-            if allocated > 0:
+            if allocated <= 0:
+                continue
+            if adv_row.reference_type == "Payment Entry":
                 pe_unallocated = flt(
                     frappe.db.get_value(
                         "Payment Entry", adv_row.reference_name, "unallocated_amount"

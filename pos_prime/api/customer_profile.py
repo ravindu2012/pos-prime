@@ -4,10 +4,10 @@ from frappe.utils import flt
 
 @frappe.whitelist()
 def get_store_credit(customer, company):
-    """Get available store credit as unallocated advance Payment Entries.
+    """Get available store credit from unallocated Payment Entries and Journal Entries.
 
-    Returns individual Payment Entry advances (for populating the advances
-    table on POS Invoice) and the total available amount.
+    Returns individual advances (for populating the advances table on
+    POS Invoice) and the total available amount.
     """
     if not customer or not company:
         return {"advances": [], "total_advance": 0}
@@ -15,11 +15,13 @@ def get_store_credit(customer, company):
     if not frappe.db.exists("Customer", customer):
         return {"advances": [], "total_advance": 0}
 
-    advances = frappe.db.sql(
+    # 1. Payment Entry advances (unallocated receipts)
+    pe_advances = frappe.db.sql(
         """
         SELECT
             'Payment Entry' as reference_type,
             pe.name as reference_name,
+            '' as reference_row,
             pe.unallocated_amount as amount,
             pe.remarks,
             pe.posting_date
@@ -36,6 +38,53 @@ def get_store_credit(customer, company):
         as_dict=True,
     )
 
+    # 2. Journal Entry advances (manual credits, adjustments)
+    receivable_account = frappe.get_cached_value(
+        "Company", company, "default_receivable_account"
+    )
+    je_advances = []
+    if receivable_account:
+        je_advances = frappe.db.sql(
+            """
+            SELECT
+                'Journal Entry' as reference_type,
+                jea.parent as reference_name,
+                jea.name as reference_row,
+                (jea.credit_in_account_currency - jea.debit_in_account_currency
+                 - IFNULL(alloc.total_allocated, 0)) as amount,
+                je.remark as remarks,
+                je.posting_date
+            FROM `tabJournal Entry Account` jea
+            JOIN `tabJournal Entry` je ON je.name = jea.parent
+            LEFT JOIN (
+                SELECT reference_row, SUM(allocated_amount) as total_allocated
+                FROM `tabSales Invoice Advance`
+                WHERE reference_type = 'Journal Entry' AND docstatus = 1
+                GROUP BY reference_row
+            ) alloc ON alloc.reference_row = jea.name
+            WHERE jea.party_type = 'Customer'
+              AND jea.party = %(customer)s
+              AND je.company = %(company)s
+              AND jea.account = %(receivable_account)s
+              AND je.docstatus = 1
+              AND jea.is_advance = 'Yes'
+              AND (jea.credit_in_account_currency - jea.debit_in_account_currency
+                   - IFNULL(alloc.total_allocated, 0)) > 0
+            ORDER BY je.posting_date ASC
+            """,
+            {
+                "customer": customer,
+                "company": company,
+                "receivable_account": receivable_account,
+            },
+            as_dict=True,
+        )
+
+    # Combine and sort by posting date (FIFO)
+    advances = sorted(
+        list(pe_advances) + list(je_advances),
+        key=lambda a: a.posting_date or "",
+    )
     total = sum(flt(a.amount) for a in advances)
     return {"advances": advances, "total_advance": flt(total, 2)}
 
