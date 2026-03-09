@@ -10,6 +10,13 @@ frappe.pages['pos-terminal'].on_page_load = function(wrapper) {
 	var isV16 = !!document.querySelector('.body-sidebar-container');
 	if (!isV16) {
 		$(wrapper).find('.page-head').remove();
+	} else {
+		// Left-align the page-head content (remove .container centering)
+		$(wrapper).find('.page-head > .container').css({
+			'max-width': '100%',
+			'padding-left': '1rem',
+			'padding-right': '1rem'
+		});
 	}
 
 	// Match navbar width: remove .container max-width, use navbar's 1rem padding
