@@ -98,7 +98,7 @@ def create_pos_invoice(
 
     profile = frappe.get_doc("POS Profile", pos_profile)
 
-    if not payments and not getattr(profile, "allow_partial_payment", 0) and not flt(store_credit_amount):
+    if not payments and not getattr(profile, "allow_partial_payment", 0) and not flt(store_credit_amount) and not (redeem_loyalty_points and flt(loyalty_points)):
         frappe.throw(_("Payments cannot be empty"))
 
     invoice = frappe.get_doc(
@@ -182,6 +182,15 @@ def create_pos_invoice(
             invoice.loyalty_redemption_account = loyalty_redemption_account
         if loyalty_redemption_cost_center:
             invoice.loyalty_redemption_cost_center = loyalty_redemption_cost_center
+        # Set loyalty_amount so ERPNext includes it in paid_amount calculation.
+        # Without this, validate_full_payment() rejects the invoice when
+        # Allow Partial Payment is unchecked (paid_amount < grand_total).
+        if loyalty_program:
+            conversion_factor = flt(
+                frappe.db.get_value("Loyalty Program", loyalty_program, "conversion_factor")
+            )
+            if conversion_factor:
+                invoice.loyalty_amount = flt(invoice.loyalty_points * conversion_factor)
 
     # Return
     if is_return:
