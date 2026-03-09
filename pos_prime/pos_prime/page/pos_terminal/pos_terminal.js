@@ -5,8 +5,12 @@ frappe.pages['pos-terminal'].on_page_load = function(wrapper) {
 		single_column: true,
 	});
 
-	// Permanently remove page head from DOM
-	$(wrapper).find('.page-head').remove();
+	// v16: keep the small page-head navbar (like /point-of-sale)
+	// v14/v15: remove it entirely for full-screen layout
+	var isV16 = !!document.querySelector('.body-sidebar-container');
+	if (!isV16) {
+		$(wrapper).find('.page-head').remove();
+	}
 
 	// Match navbar width: remove .container max-width, use navbar's 1rem padding
 	var fullWidth = 'max-width:100%!important;width:100%!important;margin:0!important;padding-left:1rem!important;padding-right:1rem!important;';
