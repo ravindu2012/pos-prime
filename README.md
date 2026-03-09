@@ -28,6 +28,9 @@ ERPNext's built-in POS is functional but limited. POS Prime is a complete replac
 - **Self-checkout kiosk mode** for customer-facing touchscreens
 - **Customer pole display** support (screen-based and VFD serial) with discount indicators
 - **Keyboard shortcuts** (F1-F10) for lightning-fast checkout
+- **Desk mode** — use POS inside Frappe Desk at `/app/pos-terminal` or standalone at `/pos-prime`
+- **Quick customer creation** — create customers inline with dynamic form fields, no page navigation
+- **Fullscreen toggle** — maximize/minimize POS with one click
 - **i18n ready** — all UI strings wrapped for translation, RTL layout support
 - **Works with ERPNext's inventory, taxes, and accounting** - no separate system
 
@@ -53,55 +56,65 @@ POS Prime does **not** add custom fields, custom doctypes, or modify any existin
 
 ## Screenshots
 
-### POS - Item Grid & Cart
-Browse items by category, search by name or barcode, and build the cart with a single tap.
+### POS - Item Grid
+Browse items by category with stock quantity badges, search by name or barcode, and add to cart with a single tap. Dark mode shown.
 
 ![POS Item Grid](screenshots/pos-item-grid.png)
 
-### POS - Cart with Items
-Full cart sidebar with quantity controls, discounts, coupon codes, and real-time totals.
+### POS - Cart
+Full cart sidebar with quantity controls, invoice discount, coupon code field, and real-time totals.
 
 ![POS Cart](screenshots/pos-cart.png)
 
 ### POS - Payment
-Multiple payment methods - Cash, Credit Card, Bank Draft, Cheque. Split payments supported.
+Payment dialog with grand total, multiple payment method tabs (Cash, Credit Card, Bank Draft, Cheque), quick amount shortcuts, and Complete Payment button.
 
 ![POS Payment](screenshots/pos-payment.png)
 
 ### POS - Payment Success
-Invoice receipt with print option after successful payment.
+Receipt screen showing "Payment Successful" with itemized invoice details, Print and New Order action buttons.
 
 ![POS Payment Success](screenshots/pos-payment-success.png)
 
 ### POS - Past Orders
-View, search, and manage all past invoices. Filter by status - All, Paid, Return, Draft.
+Searchable invoice list with status filter tabs (All, Paid, Return, Draft). Select an invoice to view items, payments, totals, and Print/Return actions.
 
 ![POS Orders](screenshots/pos-orders.png)
 
 ### POS - Returns
-Process returns directly from the POS with item search, quantity adjustment, and refund method selection.
+Return Items dialog with customer info, item search, quantity and amount adjustment, refund method selection, and Process Return button.
 
 ![POS Returns](screenshots/pos-returns.png)
 
 ### POS - Customer 360
-Complete customer profile with contact info, loyalty points, and recent invoice history.
+Customer list with selected profile showing outstanding balance, contact details, and recent POS invoice history.
 
 ![Customer 360](screenshots/pos-customer-360.png)
 
+### Customer Display - Settings
+Customer Display panel in the sidebar with "Open Display Window" and "Connect VFD" options for setting up a customer-facing screen.
+
+![Customer Display](screenshots/pos-customer-display.png)
+
+### Customer Display - Popup
+Customer Display popup window showing the Welcome screen with phone number numpad entry for loyalty point lookup.
+
+![Customer Display Popup](screenshots/pos-customer-display-popup.png)
+
 ### Customer Pole Display
-Dedicated customer-facing display showing live cart items and totals. Supports both screen-based and VFD serial displays.
+Full-screen customer-facing display showing company branding, live cart items with quantities and prices, subtotal, and grand total.
 
 ![Customer Pole Display](screenshots/customer-pole-display.png)
 
-### Denomination Calculator
-Cash counting made easy - count notes and coins by denomination and auto-populate the amount field. Available on both Open Shift and Close Shift screens.
-
-![Denomination Calculator](screenshots/denomination-calculator.png)
-
 ### Customer Display - Welcome Screen
-Customer display with phone number entry for loyalty point lookup.
+Welcome screen with company logo, greeting message, phone number input with numpad, and Submit button.
 
 ![Customer Display Welcome](screenshots/customer-display-welcome.png)
+
+### Denomination Calculator
+Cash Denomination Count dialog with Notes and Coins sections, quantity inputs per denomination, running totals, and Clear All/Apply buttons.
+
+![Denomination Calculator](screenshots/denomination-calculator.png)
 
 ---
 
@@ -133,8 +146,15 @@ Customer display with phone number entry for loyalty point lookup.
 - Resizable cart panel — drag the handle between items and cart to adjust width, persisted in localStorage
 - Collapsible item categories sidebar — toggle visibility, preference saved across sessions
 - Correct rounding support — uses ERPNext's `rounded_total` for payment calculations, change, and display
+- Fullscreen toggle — maximize/minimize the POS view with a single click
 - Dark/Light mode follows ERPNext user theme preference
 - Favicon and app logo from Website Settings
+
+### Desk Mode Integration
+- Access POS directly from Frappe Desk at `/app/pos-terminal` — no need to leave the desk
+- Standalone mode at `/pos-prime` still works as before
+- Auto-detects Frappe version and uses the correct desk URL prefix (`/app/` for v14-v15, `/desk/` for v16+)
+- In-memory routing in desk mode — no URL changes, seamless navigation within the desk iframe
 
 ### Pricing Rules & Discounts
 - Real-time pricing rule preview — promo badge, strikethrough original price, discount percentage/amount badges
@@ -189,11 +209,20 @@ Customer display with phone number entry for loyalty point lookup.
 - Multi-session broadcast
 
 ### Customer 360
-- Customer profile with contact details
-- Loyalty points balance with badge on customer selector
-- Outstanding balance and credit limit badges on customer selector
-- Recent POS invoice history
-- Quick customer search with phone number normalization
+- Slide-in customer detail panel with editable contact fields (email, mobile, loyalty program) — saves on blur
+- Quick stats badges: loyalty points, outstanding balance, credit limit, store credit
+- Primary address display
+- Recent POS invoice history with status badges (last 20 invoices)
+- Open full customer form in Desk with one click
+- Loyalty points balance and outstanding badges on customer selector
+- Quick customer search with phone number normalization — flexible matching with/without country code
+
+### Quick Customer Creation
+- Create new customers inline without leaving the POS
+- Dynamic form fields rendered from Customer doctype quick_entry metadata
+- Collapsible contact and address sections
+- Custom field support (e.g., NIC Number)
+- Auto-selects newly created customer after creation
 
 ### Batch & Serial Number Management
 - Batch selection with qty and expiry dates
@@ -267,6 +296,7 @@ All 12 layout fields (Section Break, Column Break) are structural and only relev
 | Serial/Batch bundles | Legacy fields | `serial_and_batch_bundle` | `serial_and_batch_bundle` |
 | Campaign field | `campaign` | `campaign` | `utm_campaign` |
 | POS Closing invoices | `pos_transactions` | `pos_transactions` | `pos_invoices` |
+| Desk URL prefix | `/app/` | `/app/` | `/desk/` |
 
 ---
 
@@ -278,7 +308,9 @@ bench get-app https://github.com/ravindu2012/pos-prime --branch main
 bench --site your-site.localhost install-app pos_prime
 ```
 
-After installation, navigate to `/pos-prime` on your site to open the POS.
+After installation, open the POS at:
+- **Standalone**: `/pos-prime` — full-screen SPA with client-side routing
+- **Inside Desk**: `/app/pos-terminal` — embedded within Frappe Desk navigation
 
 ### Kiosk Mode
 
