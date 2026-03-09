@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { call } from 'frappe-ui'
 import { session } from './session'
 
@@ -11,6 +11,15 @@ export const usePosSessionStore = defineStore('posSession', () => {
   const loading = ref(false)
 
   const hasOpenShift = computed(() => isOpen.value && !!openingEntry.value)
+
+  // Update desk page-head indicator with opened POS profile
+  watch(posProfile, (name) => {
+    if (name && typeof window.posPageSetProfile === 'function') {
+      window.posPageSetProfile(name)
+    } else if (!name && typeof window.posPageClearProfile === 'function') {
+      window.posPageClearProfile()
+    }
+  })
 
   async function checkOpeningEntry() {
     loading.value = true

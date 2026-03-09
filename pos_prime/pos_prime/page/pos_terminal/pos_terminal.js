@@ -1,23 +1,22 @@
 frappe.pages['pos-terminal'].on_page_load = function(wrapper) {
 	frappe.ui.make_app_page({
 		parent: wrapper,
-		title: __('POS Prime'),
+		title: __('POS Terminal'),
 		single_column: true,
 	});
 
-	// v16: keep the small page-head navbar (like /point-of-sale)
-	// v14/v15: remove it entirely for full-screen layout
-	var isV16 = !!document.querySelector('.body-sidebar-container');
-	if (!isV16) {
-		$(wrapper).find('.page-head').remove();
-	} else {
-		// Left-align the page-head content (remove .container centering)
-		$(wrapper).find('.page-head > .container').css({
-			'max-width': '100%',
-			'padding-left': '1rem',
-			'padding-right': '1rem'
-		});
-	}
+	// Store page reference for Vue app to update indicator
+	var page = wrapper.page;
+
+	// Breadcrumbs: POS Prime > POS Terminal
+	frappe.breadcrumbs.add('POS Prime', 'pos-terminal');
+
+	// Left-align the page-head content (remove .container centering)
+	$(wrapper).find('.page-head > .container').css({
+		'max-width': '100%',
+		'padding-left': '1rem',
+		'padding-right': '1rem'
+	});
 
 	// Match navbar width: remove .container max-width, use navbar's 1rem padding
 	var fullWidth = 'max-width:100%!important;width:100%!important;margin:0!important;padding-left:1rem!important;padding-right:1rem!important;';
@@ -34,6 +33,19 @@ frappe.pages['pos-terminal'].on_page_load = function(wrapper) {
 	// Hide Frappe desk sidebar permanently on this page
 	// v14/v15: aside.desk-sidebar   v16: .body-sidebar-container
 	$('aside.desk-sidebar, .desk-sidebar, .body-sidebar-container').hide();
+
+	// Global callback for Vue app to show the opened POS profile
+	window.posPageSetProfile = function(profileName) {
+		if (page && profileName) {
+			page.set_indicator(profileName, 'blue');
+		}
+	};
+	// Clear indicator when shift closes
+	window.posPageClearProfile = function() {
+		if (page) {
+			page.clear_indicator();
+		}
+	};
 
 	// Size it to fill remaining viewport
 	setTimeout(sizePosApp, 0);
