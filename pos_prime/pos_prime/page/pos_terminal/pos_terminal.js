@@ -20,6 +20,10 @@ frappe.pages['pos-terminal'].on_page_load = function(wrapper) {
 	// Create mount point
 	$(wrapper).find('.layout-main-section').html('<div id="pos-prime-app"></div>');
 
+	// Hide Frappe desk sidebar permanently on this page
+	// v14/v15: aside.desk-sidebar   v16: .body-sidebar-container
+	$('aside.desk-sidebar, .desk-sidebar, .body-sidebar-container').hide();
+
 	// Size it to fill remaining viewport
 	setTimeout(sizePosApp, 0);
 	window.addEventListener('resize', sizePosApp);
@@ -33,12 +37,16 @@ frappe.pages['pos-terminal'].on_page_load = function(wrapper) {
 };
 
 frappe.pages['pos-terminal'].on_page_show = function() {
+	// Re-hide sidebar when returning to this page
+	$('aside.desk-sidebar, .desk-sidebar, .body-sidebar-container').hide();
 	sizePosApp();
 	window.addEventListener('resize', sizePosApp);
 };
 
 frappe.pages['pos-terminal'].on_page_hide = function() {
 	window.removeEventListener('resize', sizePosApp);
+	// Restore sidebar when navigating away
+	$('aside.desk-sidebar, .desk-sidebar, .body-sidebar-container').show();
 };
 
 function sizePosApp() {
