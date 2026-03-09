@@ -525,8 +525,7 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
               v-if="customerStore.storeCredit > 0"
               class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3"
             >
-              <template v-if="settingsStore.allowPartialPayment || settingsStore.erpnextVersion < 15">
-                <label class="flex items-center gap-2.5 cursor-pointer">
+              <label class="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     v-model="applyStoreCredit"
@@ -563,18 +562,6 @@ const numpadKeys = ['1','2','3','4','5','6','7','8','9','.','0','DEL']
                     </span>
                   </div>
                 </div>
-              </template>
-              <div v-else class="flex items-center gap-2">
-                <BadgeDollarSign :size="14" class="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <div>
-                  <div class="text-xs text-emerald-800 dark:text-emerald-300">
-                    {{ formatCurrency(customerStore.storeCredit) }} {{ __('store credit available') }}
-                  </div>
-                  <div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                    {{ __('Enable "Allow Partial Payment" in POS Profile to use store credit') }}
-                  </div>
-                </div>
-              </div>
             </div>
 
             <!-- Loyalty Points -->

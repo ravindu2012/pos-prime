@@ -120,7 +120,7 @@ export const useCustomerStore = defineStore('customer', () => {
         ])
         outstanding.value = outstandingData?.outstanding || 0
         creditLimit.value = outstandingData?.credit_limit || 0
-        storeCredit.value = storeCreditData?.store_credit || 0
+        storeCredit.value = storeCreditData?.total_advance || 0
       } catch {
         outstanding.value = 0
         creditLimit.value = 0

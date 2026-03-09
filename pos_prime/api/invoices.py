@@ -265,43 +265,94 @@ def create_pos_invoice(
                     )
                 )
 
-    # Validate and cap store credit at submit time to prevent double-spend
+    # Store credit via advance Payment Entries
     store_credit = flt(store_credit_amount)
+    credit_data = None
     if store_credit > 0:
         from pos_prime.api.customer_profile import get_store_credit
 
-        actual = get_store_credit(customer, profile.company)
-        available = flt(actual.get("store_credit", 0))
+        credit_data = get_store_credit(customer, profile.company)
+        available = flt(credit_data.get("total_advance", 0))
         if store_credit > available:
             store_credit = available
-        # Cap to invoice total
-        invoice_total = flt(invoice.grand_total) or flt(invoice.net_total) or 0
-        if invoice_total > 0:
-            store_credit = min(store_credit, invoice_total)
 
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()
 
+    # Now grand_total is calculated — cap store credit and allocate advances FIFO
+    if store_credit > 0 and credit_data:
+        invoice_total = flt(invoice.rounded_total or invoice.grand_total)
+        if invoice_total > 0:
+            store_credit = min(store_credit, invoice_total)
+
+        remaining = store_credit
+        for adv in credit_data.get("advances", []):
+            if remaining <= 0:
+                break
+            alloc = min(remaining, flt(adv.amount))
+            if alloc <= 0:
+                continue
+            invoice.append("advances", {
+                "reference_type": adv.reference_type,
+                "reference_name": adv.reference_name,
+                "advance_amount": flt(adv.amount),
+                "allocated_amount": alloc,
+                "remarks": adv.get("remarks", ""),
+            })
+            remaining -= alloc
+
+        invoice.total_advance = flt(store_credit - remaining)
+
+    # Override POS validation to account for advance payments
+    if flt(invoice.total_advance) > 0:
+        _orig_validate_full = invoice.validate_full_payment
+
+        def _patched_validate_full():
+            effective_paid = flt(invoice.paid_amount) + flt(invoice.total_advance)
+            target = flt(invoice.rounded_total or invoice.grand_total)
+            if effective_paid >= target:
+                return
+            _orig_validate_full()
+
+        invoice.validate_full_payment = _patched_validate_full
+
+        def _patched_set_outstanding():
+            invoice.outstanding_amount = max(
+                0,
+                flt(invoice.rounded_total or invoice.grand_total)
+                - flt(invoice.paid_amount)
+                - flt(invoice.total_advance)
+                + flt(invoice.change_amount)
+                + flt(invoice.write_off_amount),
+            )
+
+        invoice.set_outstanding_amount = _patched_set_outstanding
+
     # When "Validate Stock on Save" is unchecked, bypass ERPNext's
     # validate_stock_availablility() which runs on both insert and submit.
-    # The method only skips for drafts; during submit it always runs and
-    # checks is_negative_stock_allowed() from Stock Settings — which our
-    # old frappe.flags.allow_negative_stock approach could not override.
     if not profile.validate_stock_on_save:
         invoice.validate_stock_availablility = lambda: None
 
     invoice.insert()
     invoice.submit()
 
-    # After submit, set outstanding_amount = store_credit amount.
-    # POS Invoices don't create GL entries until consolidation, so we use
-    # outstanding_amount to track how much store credit was "claimed".
-    # get_store_credit() subtracts this from the GL credit balance.
-    if store_credit > 0:
-        outstanding = flt(store_credit, invoice.precision("outstanding_amount"))
-        if outstanding > 0:
-            invoice.db_set("outstanding_amount", outstanding, update_modified=False)
-            invoice.outstanding_amount = outstanding
-            invoice.set_status(update=True)
+    # Allocate Payment Entries — reduce unallocated_amount to prevent double-spend
+    if flt(invoice.total_advance) > 0:
+        for adv_row in invoice.advances:
+            allocated = flt(adv_row.allocated_amount)
+            if allocated > 0:
+                pe_unallocated = flt(
+                    frappe.db.get_value(
+                        "Payment Entry", adv_row.reference_name, "unallocated_amount"
+                    )
+                )
+                new_unallocated = max(0, pe_unallocated - allocated)
+                frappe.db.set_value(
+                    "Payment Entry",
+                    adv_row.reference_name,
+                    "unallocated_amount",
+                    new_unallocated,
+                    update_modified=False,
+                )
 
     return format_invoice_response(invoice)
