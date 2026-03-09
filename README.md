@@ -23,7 +23,7 @@ ERPNext's built-in POS is functional but limited. POS Prime is a complete replac
 - **Loyalty points** — redeem points at checkout with live balance deduction
 - **Store credit** — automatically detects customer credit from returns/overpayments, apply at checkout with double-spend prevention
 - **Partial payments & credit limits** — split pay, pay later, with automatic credit limit enforcement
-- **Pricing rule discounts** — promo badges, strikethrough prices, and discount labels on items
+- **Pricing rule discounts** — promo badges, strikethrough prices, discount labels, coupon codes, and free item rules
 - **Resizable cart panel** — drag to resize the cart column, persisted across sessions
 - **Self-checkout kiosk mode** for customer-facing touchscreens
 - **Customer pole display** support (screen-based and VFD serial) with discount indicators
@@ -132,8 +132,10 @@ Cash Denomination Count dialog with Notes and Coins sections, quantity inputs pe
 - Partial payments with confirmation dialog (requires POS Profile `Allow Partial Payment`)
 - Credit limit enforcement — displays outstanding, credit limit, and available credit; blocks transactions that would exceed the limit
 - Loyalty points redemption — apply points at checkout with live grand total update
-- Coupon code support
+- Coupon code support — validates and applies coupon-based pricing rules (Price and Product discounts)
 - Invoice-level and item-level discounts
+- Pricing rule engine — applies non-coupon and coupon-based rules with smart single-rule selection per item
+- Free item rules (Buy X Get Y) — automatically adds free items from Product discount pricing rules
 - Tax calculation with Item Tax Templates
 - POS returns and refunds
 - Order history with search and filters
@@ -159,6 +161,10 @@ Cash Denomination Count dialog with Notes and Coins sections, quantity inputs pe
 ### Pricing Rules & Discounts
 - Real-time pricing rule preview — promo badge, strikethrough original price, discount percentage/amount badges
 - Supports all ERPNext pricing rule types: Discount %, Discount Amount, Fixed Rate
+- Coupon code pricing rules — Price discounts and Product discounts (free items) via coupon codes
+- Non-coupon pricing rules — automatic item-level and transaction-level rule application
+- Free item rules (Buy X Get Y) — with deduplication across ERPNext versions
+- Smart rule selection — best single rule per category (coupon preferred, then highest priority)
 - Transaction-level promo discounts shown in cart summary
 - Customer Pole Display mirrors discount indicators (Promo badge, strikethrough, discount badge)
 
