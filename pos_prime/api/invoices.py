@@ -279,6 +279,22 @@ def create_pos_invoice(
     invoice.flags.ignore_permissions = True
     invoice.set_missing_values()
 
+    # Cap payment row amounts so total paid does not exceed the invoice total.
+    # When a customer tenders more cash than the bill (e.g. pays 1000 for an
+    # 880 bill), the frontend shows the change but the backend should record
+    # only the net amount.  Without this cap, ERPNext's POS Closing Entry
+    # get_payments() may fail to subtract change_amount (due to
+    # account_for_change_amount vs payment-account mismatch), inflating the
+    # expected cash and showing a false shortage.
+    if not is_return and flt(invoice.change_amount) > 0:
+        excess = flt(invoice.change_amount)
+        for p in reversed(invoice.payments):
+            if excess <= 0:
+                break
+            reduction = min(excess, flt(p.amount))
+            p.amount = flt(p.amount - reduction)
+            excess -= reduction
+
     # Now grand_total is calculated — cap store credit and allocate advances FIFO
     if store_credit > 0 and credit_data:
         invoice_total = flt(invoice.rounded_total or invoice.grand_total)
