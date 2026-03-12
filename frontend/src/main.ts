@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 // globals must be imported FIRST — before any Vue component that uses __()
 import './globals'
 

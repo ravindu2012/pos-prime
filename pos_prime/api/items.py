@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Ravindu Gajanayaka
+# Licensed under GPLv3. See license.txt
+
 import frappe
 from pos_prime.api._utils import get_product_bundle_items, get_bundle_availability, validate_pos_access
 

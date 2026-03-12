@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026, Ravindu Gajanayaka -->
+<!-- Licensed under GPLv3. See license.txt -->
+
 <script setup lang="ts">
 import { Minus, Plus, Trash2, Gift, Zap, Package } from 'lucide-vue-next'
 import { useCurrency } from '@/composables/useCurrency'

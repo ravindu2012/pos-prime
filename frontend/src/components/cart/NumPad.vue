@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026, Ravindu Gajanayaka -->
+<!-- Licensed under GPLv3. See license.txt -->
+
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Delete, Check } from 'lucide-vue-next'

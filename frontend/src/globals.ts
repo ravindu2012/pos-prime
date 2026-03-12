@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 // Ensure Frappe's translation function is available globally for Vue templates and script setup
 // This must be imported BEFORE any component that uses __()
 if (typeof window.__ === 'undefined') {

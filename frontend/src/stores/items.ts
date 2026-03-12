@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { call } from 'frappe-ui'

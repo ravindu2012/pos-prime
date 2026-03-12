@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026, Ravindu Gajanayaka -->
+<!-- Licensed under GPLv3. See license.txt -->
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'

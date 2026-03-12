@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Ravindu Gajanayaka
+# Licensed under GPLv3. See license.txt
+
 """Create test items. Uses auto-generated item codes from Document Naming Rule."""
 import frappe
 

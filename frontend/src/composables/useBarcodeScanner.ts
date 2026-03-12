@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 import { ref, onMounted, onUnmounted } from 'vue'
 
 export function useBarcodeScanner(onScan: (barcode: string) => void) {

@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026, Ravindu Gajanayaka -->
+<!-- Licensed under GPLv3. See license.txt -->
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'

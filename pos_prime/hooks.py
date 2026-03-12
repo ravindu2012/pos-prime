@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Ravindu Gajanayaka
+# Licensed under GPLv3. See license.txt
+
 app_name = "pos_prime"
 app_title = "POS Prime"
 app_publisher = "Ravindu Gajanayaka"

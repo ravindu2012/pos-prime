@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 /**
  * Build a Frappe desk URL that works across v14/v15 (/app/) and v16+ (/desk/).
  * Detects the correct prefix from the current page or frappe router.

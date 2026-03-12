@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 import { computed } from 'vue'
 
 const RTL_LANGUAGES = ['ar', 'he', 'fa', 'ps']

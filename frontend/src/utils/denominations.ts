@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Ravindu Gajanayaka
+// Licensed under GPLv3. See license.txt
+
 export const CURRENCY_DENOMINATIONS: Record<string, number[]> = {
   LKR: [5000, 1000, 500, 100, 50, 20, 10, 5, 2, 1],
   USD: [100, 50, 20, 10, 5, 2, 1, 0.50, 0.25, 0.10, 0.05, 0.01],

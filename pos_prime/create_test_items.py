@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Ravindu Gajanayaka
+# Licensed under GPLv3. See license.txt
+
 """Create all possible inventory item types for POS testing."""
 import frappe
 from frappe.utils import nowdate, add_days

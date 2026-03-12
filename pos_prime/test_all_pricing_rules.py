@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Ravindu Gajanayaka
+# Licensed under GPLv3. See license.txt
+
 """Test all pricing rules and coupons against calculate_taxes API,
 then simulate cart store processing to verify UI correctness."""
 
