@@ -97,9 +97,20 @@ function switchNumPadMode(mode: 'qty' | 'discount' | 'discountAmt' | 'rate') {
 
 // Keyboard input for non-touch desktops
 const keyboardInput = ref('')
+const weightInputMode = ref<'kg' | 'g'>('kg')  //modifications
 
 function onKeyboardInputChange() {
-  const val = parseFloat(keyboardInput.value) || 0
+  let val = parseFloat(keyboardInput.value)
+
+  if (isNaN(val)) {
+    val = 0
+  }
+
+  // Convert grams to kilograms
+  if (numPadMode.value === 'qty' && weightInputMode.value === 'g') {
+    val = val / 1000
+  }
+
   onNumPadUpdate(val)
 }
 
@@ -225,7 +236,38 @@ const emit = defineEmits<{
         </div>
         <div class="flex items-center gap-2">
           <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">{{ numPadLabel }}</span>
+         
+         
+         <div
+    v-if="numPadMode === 'qty'"
+    class="flex gap-2 mb-2"
+>
+    <button
+        @click="weightInputMode = 'kg'"
+        class="flex-1 py-1 rounded"
+        :class="weightInputMode === 'kg'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200'"
+    >
+        Kg
+    </button>
+
+    <button
+        @click="weightInputMode = 'g'"
+        class="flex-1 py-1 rounded"
+        :class="weightInputMode === 'g'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200'"
+    >
+        Grams
+    </button>
+</div>
           <input
+           :placeholder="weightInputMode == 'kg'
+            ? 'e.g. 0.654'
+              'e.g. 654'
+           "
+
             v-model="keyboardInput"
             type="number"
             step="any"
@@ -235,6 +277,23 @@ const emit = defineEmits<{
             class="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-semibold text-right focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             autofocus
           />
+
+                  <div
+    v-if="numPadMode === 'qty'"
+    class="text-xs text-gray-500 text-right mt-1"
+>
+    Saving:
+    <strong>
+        {{
+            weightInputMode === 'kg'
+                ? (parseFloat(keyboardInput || '0') || 0).toFixed(3)
+                : ((parseFloat(keyboardInput || '0') || 0) / 1000).toFixed(3)
+        }}
+        kg
+    </strong>
+</div>
+
+
           <button
             @click="closeKeyboardInput"
             class="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-2 py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30"
