@@ -30,6 +30,9 @@ const { formatCurrency } = useCurrency()
 const showNumPad = ref(false)
 const numPadMode = ref<'qty' | 'discount' | 'discountAmt' | 'rate'>('qty')
 
+// Weight Mode for Manual Input (Kg vs Grams)
+const weightInputMode = ref<'kg' | 'g'>('kg')
+
 const availableNumPadModes = computed(() => {
   const modes: ('qty' | 'discount' | 'discountAmt' | 'rate')[] = ['qty']
   if (settingsStore.allowDiscountChange) {
@@ -44,17 +47,28 @@ const numPadValue = computed(() => {
   if (cartStore.selectedItemIndex === null) return 0
   const item = cartStore.items[cartStore.selectedItemIndex]
   if (!item) return 0
-  if (numPadMode.value === 'qty') return item.qty
+  if (numPadMode.value === 'qty') {
+    return weightInputMode.value === 'g' ? item.qty * 1000 : item.qty
+  }
   if (numPadMode.value === 'discount') return item.discount_percentage
   if (numPadMode.value === 'discountAmt') return item.discount_amount
   return item.rate
 })
 
 const numPadLabel = computed(() => {
-  if (numPadMode.value === 'qty') return __('Quantity')
+  if (numPadMode.value === 'qty') return weightInputMode.value === 'g' ? __('Weight (g)') : __('Quantity')
   if (numPadMode.value === 'discount') return __('Discount %')
   if (numPadMode.value === 'discountAmt') return __('Discount Amt')
   return __('Price')
+})
+
+// Calculated weight in Kg for live preview
+const calculatedWeightKg = computed(() => {
+  const val = parseFloat(keyboardInput.value) || 0
+  if (numPadMode.value === 'qty' && weightInputMode.value === 'g') {
+    return (val / 1000).toFixed(3)
+  }
+  return val.toFixed(3)
 })
 
 function onItemSelect(index: number) {
@@ -64,7 +78,10 @@ function onItemSelect(index: number) {
   showNumPad.value = true
   numPadMode.value = 'qty'
   // Sync keyboard input
-  if (item) keyboardInput.value = String(item.qty)
+  if (item) {
+    const val = weightInputMode.value === 'g' ? item.qty * 1000 : item.qty
+    keyboardInput.value = String(val)
+  }
 }
 
 function onUpdateQty(index: number, qty: number) {
@@ -81,7 +98,8 @@ function onRemove(index: number) {
 function onNumPadUpdate(value: number) {
   if (cartStore.selectedItemIndex === null) return
   if (numPadMode.value === 'qty') {
-    cartStore.updateQty(cartStore.selectedItemIndex, value)
+    const finalQty = weightInputMode.value === 'g' ? value / 1000 : value
+    cartStore.updateQty(cartStore.selectedItemIndex, finalQty)
   } else if (numPadMode.value === 'discount') {
     cartStore.updateItemDiscount(cartStore.selectedItemIndex, value)
   } else if (numPadMode.value === 'discountAmt') {
@@ -93,6 +111,29 @@ function onNumPadUpdate(value: number) {
 
 function switchNumPadMode(mode: 'qty' | 'discount' | 'discountAmt' | 'rate') {
   numPadMode.value = mode
+  syncKeyboardInput()
+}
+
+function switchWeightUnit(unit: 'kg' | 'g') {
+  weightInputMode.value = unit
+  syncKeyboardInput()
+}
+
+function syncKeyboardInput() {
+  if (cartStore.selectedItemIndex === null) return
+  const item = cartStore.items[cartStore.selectedItemIndex]
+  if (!item) return
+
+  if (numPadMode.value === 'qty') {
+    const val = weightInputMode.value === 'g' ? item.qty * 1000 : item.qty
+    keyboardInput.value = String(val)
+  } else if (numPadMode.value === 'discount') {
+    keyboardInput.value = String(item.discount_percentage)
+  } else if (numPadMode.value === 'discountAmt') {
+    keyboardInput.value = String(item.discount_amount)
+  } else {
+    keyboardInput.value = String(item.rate)
+  }
 }
 
 // Keyboard input for non-touch desktops
@@ -106,6 +147,13 @@ function onKeyboardInputChange() {
 function closeKeyboardInput() {
   onKeyboardInputChange()
   showNumPad.value = false
+}
+
+function selectAllInput(event: FocusEvent) {
+  const target = event.target as HTMLInputElement
+  if (target) {
+    target.select()
+  }
 }
 
 function openPayment() {
@@ -198,6 +246,25 @@ const emit = defineEmits<{
             {{ mode === 'qty' ? __('Qty') : mode === 'discount' ? __('Disc%') : mode === 'discountAmt' ? __('Disc$') : __('Price') }}
           </button>
         </div>
+
+        <!-- Grams / Kg toggle for touch -->
+        <div v-if="numPadMode === 'qty'" class="flex gap-1 mb-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <button
+            @click="switchWeightUnit('kg')"
+            class="flex-1 py-1 text-[11px] font-bold rounded-md transition-all"
+            :class="weightInputMode === 'kg' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'"
+          >
+            {{ __('Kg') }}
+          </button>
+          <button
+            @click="switchWeightUnit('g')"
+            class="flex-1 py-1 text-[11px] font-bold rounded-md transition-all"
+            :class="weightInputMode === 'g' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'"
+          >
+            {{ __('Grams (g)') }}
+          </button>
+        </div>
+
         <NumPad
           :value="numPadValue"
           :label="numPadLabel"
@@ -214,7 +281,7 @@ const emit = defineEmits<{
           <button
             v-for="mode in availableNumPadModes"
             :key="mode"
-            @click="() => { switchNumPadMode(mode); const item = cartStore.items[cartStore.selectedItemIndex!]; if (item) keyboardInput = String(mode === 'qty' ? item.qty : mode === 'discount' ? item.discount_percentage : mode === 'discountAmt' ? item.discount_amount : item.rate) }"
+            @click="switchNumPadMode(mode)"
             class="flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-150 uppercase tracking-wider"
             :class="numPadMode === mode
               ? 'bg-blue-600 text-white shadow-sm'
@@ -223,6 +290,25 @@ const emit = defineEmits<{
             {{ mode === 'qty' ? __('Qty') : mode === 'discount' ? __('Disc%') : mode === 'discountAmt' ? __('Disc$') : __('Price') }}
           </button>
         </div>
+
+        <!-- Grams / Kg toggle for keyboard input -->
+        <div v-if="numPadMode === 'qty'" class="flex gap-1 mb-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <button
+            @click="switchWeightUnit('kg')"
+            class="flex-1 py-1 text-[11px] font-bold rounded-md transition-all"
+            :class="weightInputMode === 'kg' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'"
+          >
+            {{ __('Kg') }}
+          </button>
+          <button
+            @click="switchWeightUnit('g')"
+            class="flex-1 py-1 text-[11px] font-bold rounded-md transition-all"
+            :class="weightInputMode === 'g' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'"
+          >
+            {{ __('Grams (g)') }}
+          </button>
+        </div>
+
         <div class="flex items-center gap-2">
           <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">{{ numPadLabel }}</span>
           <input
@@ -230,7 +316,9 @@ const emit = defineEmits<{
             type="number"
             step="any"
             min="0"
+            :placeholder="numPadMode === 'qty' ? (weightInputMode === 'g' ? 'e.g. 654' : 'e.g. 0.654') : '0'"
             @input="onKeyboardInputChange"
+            @focus="selectAllInput"
             @keydown.enter="closeKeyboardInput"
             class="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-semibold text-right focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             autofocus
@@ -242,6 +330,11 @@ const emit = defineEmits<{
             <Check :size="12" />
             {{ __('Done') }}
           </button>
+        </div>
+
+        <!-- Calculated weight display -->
+        <div v-if="numPadMode === 'qty'" class="text-[11px] font-medium text-gray-400 dark:text-gray-500 text-right mt-1.5">
+          {{ __('Cart Weight:') }} <span class="font-bold text-blue-600 dark:text-blue-400">{{ calculatedWeightKg }} kg</span>
         </div>
       </div>
     </Transition>
